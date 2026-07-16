@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRA SBOM Quality Analyzer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 bg-gray-950 py-6 px-8 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-teal-400">🛡️ CRA SBOM Quality Analyzer</h1>
+      <p class="text-xs text-gray-400 mt-1">100% 本地端瀏覽器解析，請安心使用。</p>
+    </div>
+    <span class="bg-teal-950 text-teal-400 text-xs font-semibold px-2.5 py-1 rounded border border-teal-800">GitHub Pages Ready</span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto p-6 space-y-6">
+    
+    <!-- Upload Section -->
+    <section class="bg-gray-950 border border-gray-800 rounded-xl p-8 text-center space-y-4">
+      <div class="max-w-md mx-auto">
+        <label for="file-upload" class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 hover:border-teal-500 rounded-lg p-6 cursor-pointer bg-gray-900/50 transition duration-200">
+          <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <span class="text-sm font-medium text-gray-300">選擇 SBOM JSON 檔案至此</span>
+          <span class="text-xs text-gray-500 mt-1">支援 CycloneDX (JSON) / SPDX (JSON)</span>
+          <input id="file-upload" type="file" class="hidden" accept=".json" onchange="handleFileSelect(event)">
+        </label>
+      </div>
+      <div id="file-info" class="text-sm text-teal-400 font-mono hidden"></div>
+    </section>
+
+    <!-- Error Alert -->
+    <div id="error-box" class="bg-red-950/50 border border-red-800 text-red-300 px-4 py-3 rounded-lg hidden">
+      <strong class="font-bold">解析錯誤：</strong>
+      <span id="error-message" class="block sm:inline font-mono text-sm"></span>
+    </div>
+
+    <!-- Analysis Dashboard -->
+    <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+      
+      <!-- Left: Metadata & NOASSERTION Detector (1/3 width) -->
+      <div class="space-y-6">
+        <!-- Metadata Overview -->
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-6 space-y-4">
+          <h2 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+            📊 基本屬性與格式
+          </h2>
+          <div class="space-y-3 text-sm">
+            <div class="bg-gray-900 p-3 rounded">
+              <span class="text-gray-400 text-xs block">SBOM 標準格式</span>
+              <span id="meta-format" class="font-mono font-bold text-teal-300">-</span>
+            </div>
+            <div class="bg-gray-900 p-3 rounded">
+              <span class="text-gray-400 text-xs block">總掃描到的檔案數量</span>
+              <span id="meta-count" class="font-mono font-bold text-gray-300">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOASSERTION Detector -->
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-6 space-y-4">
+          <h2 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+            🔍 NOASSERTION 欄位檢測
+          </h2>
+          <p class="text-xs text-gray-400">
+            <code>NOASSERTION</code> 代表元件資訊或授權條款處於未聲明狀態。若比例過高，將會降低 SBOM 的可信度與合規價值。建議若部份組件為組織自行開發，將 NOASSERTION 替換為組織名稱或開發者名稱。
+          </p>
+          <div class="bg-gray-900 p-4 rounded text-center space-y-1 border border-gray-800">
+            <span class="text-xs text-gray-400 block">偵測到含有 NOASSERTION 的元件</span>
+            <span id="noassertion-count" class="text-2xl font-bold text-yellow-500 font-mono">0</span>
+            <span id="noassertion-ratio" class="text-xs text-gray-500 block">佔全體元件 0%</span>
+          </div>
+          <div class="max-h-40 overflow-y-auto text-xs space-y-1.5" id="noassertion-list">
+            <!-- Dynamic list -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: NTIA Compliance Checklist with Line & Code Snippet (2/3 width) -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- NTIA Checklist -->
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-6">
+          <h2 class="text-lg font-semibold text-gray-200 mb-4">📝 CRA 最小合規屬性稽核 </h2>
+          <div class="space-y-4" id="ntia-checklist">
+            <!-- Dynamic Injection -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-800 bg-gray-950 py-6 px-8 mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+      
+      <!-- Left Side: Copyright & Author Info -->
+      <div class="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-2 text-center md:text-left">
+        <span>© 2026 CRA SBOM Quality Analyzer.</span>
+        <span class="text-gray-800 hidden sm:inline">|</span>
+        <span>Author: <strong class="text-gray-300 font-medium">Eugene Chang (TÜV SÜD Taiwan)</strong></span>
+        <span class="text-gray-800 hidden sm:inline">|</span>
+        <span class="flex items-center gap-1">
+          Bug Report: 
+          <a href="mailto:eugene.chang@tuvsud.com" class="text-teal-400 hover:text-teal-300 underline underline-offset-4 decoration-teal-900/60 hover:decoration-teal-400 transition duration-150 font-mono">
+            eugene.chang@tuvsud.com
+          </a>
+        </span>
+      </div>
+      
+      <!-- Right Side: Version Badge -->
+      <div class="flex items-center shrink-0">
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.0.0</span>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    let rawFileLines = []; // 儲存原始檔案的每一行，用於定位
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('file-info').innerText = `已載入檔案: ${file.name} (${(file.size/1024).toFixed(2)} KB)`;
+      document.getElementById('file-info').classList.remove('hidden');
+      document.getElementById('error-box').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const textContent = e.target.result;
+        rawFileLines = textContent.split('\n'); // 分割行
+        try {
+          const parsed = JSON.parse(textContent);
+          analyzeSbom(parsed);
+        } catch (err) {
+          showError(`JSON 語法毀損（可能發生截斷或不完整）。錯誤詳細資訊: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showError(msg) {
+      document.getElementById('error-message').innerText = msg;
+      document.getElementById('error-box').classList.remove('hidden');
+    }
+
+    // 遞迴計算整個 JSON 物件中含有 filename (不區分大小寫，包含 fileName) 的 key 總數
+    function countFilenameKeys(obj) {
+      let count = 0;
+      function recurse(current) {
+        if (!current || typeof current !== 'object') return;
+        if (Array.isArray(current)) {
+          for (let i = 0; i < current.length; i++) {
+            recurse(current[i]);
+          }
+        } else {
+          for (const key in current) {
+            if (current.hasOwnProperty(key)) {
+              if (key.toLowerCase() === 'filename') {
+                count++;
+              }
+              recurse(current[key]);
+            }
+          }
+        }
+      }
+      recurse(obj);
+      return count;
+    }
+
+    // 尋找特定元件在原始 JSON 中大概位在第幾行（已過濾 Document 根節點）
+    function findComponentLine(componentName, componentVersion) {
+      if (!componentName) return { lineNum: "未知", snippet: "{}" };
+      
+      let foundIndex = -1;
+      for (let i = 0; i < rawFileLines.length; i++) {
+        const line = rawFileLines[i];
+        
+        // 關鍵修正：如果這行包含 SPDX 文件根節點特徵，直接跳過，不作為元件定位點
+        if (line.includes("SPDXRef-DOCUMENT") || line.includes("documentNamespace")) {
+          continue;
+        }
+
+        if (line.includes(`"${componentName}"`)) {
+          if (!componentVersion || line.includes(`"${componentVersion}"`)) {
+            foundIndex = i;
+            break;
+          }
+        }
+      }
+      
+      // 如果精確匹配沒找到，再進行模糊匹配（同樣排除 Document）
+      if (foundIndex === -1) {
+        foundIndex = rawFileLines.findIndex((line, idx) => {
+          if (line.includes("SPDXRef-DOCUMENT") || line.includes("documentNamespace")) return false;
+          return line.includes(`"${componentName}"`);
+        });
+      }
+
+      if (foundIndex !== -1) {
+        const start = Math.max(0, foundIndex - 1);
+        const end = Math.min(rawFileLines.length - 1, foundIndex + 2);
+        const snippet = rawFileLines.slice(start, end + 1).map(l => l.trim()).join('\n');
+        return {
+          lineNum: foundIndex + 1,
+          snippet: snippet
+        };
+      }
+      return { lineNum: "未知", snippet: `"${componentName}"` };
+    }
+
+    // 尋找根節點特定屬性（如 metadata / creationInfo）所在的行數
+    function findMetadataLine(keyword) {
+      const foundIndex = rawFileLines.findIndex(line => line.includes(`"${keyword}"`));
+      if (foundIndex !== -1) {
+        const start = Math.max(0, foundIndex);
+        const end = Math.min(rawFileLines.length - 1, foundIndex + 3);
+        const snippet = rawFileLines.slice(start, end + 1).map(l => l.trim()).join('\n');
+        return { lineNum: foundIndex + 1, snippet: snippet };
+      }
+      return { lineNum: "全域檔頭", snippet: `"${keyword}" 欄位遺失` };
+    }
+
+    function analyzeSbom(data) {
+      document.getElementById('dashboard').classList.remove('hidden');
+      
+      let format = "未知格式";
+      let isFormatValid = false; // 用於標記格式是否合法
+      let creator = null;
+      let timestamp = null;
+      let rawComponents = []; // 暫存未過濾的元件
+      let hasDependencies = false;
+
+      // ==========================================
+      // 1. 規格識別、建立者、時間戳與原始元件提取
+      // ==========================================
+      
+      // A. 判定是否為 CycloneDX 格式
+      if (data.bomFormat && data.bomFormat.toLowerCase() === "cyclonedx") {
+        format = `CycloneDX v${data.specVersion || "未知"}`;
+        isFormatValid = true;
+        rawComponents = data.components || [];
+        hasDependencies = !!(data.dependencies && data.dependencies.length > 0);
+        
+        if (data.metadata) {
+          if (data.metadata.tools) {
+            if (Array.isArray(data.metadata.tools)) {
+              creator = data.metadata.tools.map(t => {
+                if (t.vendor && t.name) return `${t.vendor} ${t.name}`;
+                return t.name || t.id;
+              }).filter(t => !!t).join(", ");
+            } else if (data.metadata.tools.components) {
+              creator = data.metadata.tools.components.map(c => c.name).join(", ");
+            } else if (data.metadata.tools.services) {
+              creator = data.metadata.tools.services.map(s => s.name).join(", ");
+            }
+          }
+          if (data.metadata.authors && !creator) {
+            creator = data.metadata.authors.map(a => a.name).join(", ");
+          }
+          if (!creator && data.metadata.component && data.metadata.component.supplier) {
+            const s = data.metadata.component.supplier;
+            creator = s.name || (typeof s === 'string' ? s : null);
+          }
+          timestamp = data.metadata.timestamp || null;
+        }
+      } 
+      // B. 判定是否為 SPDX 格式 (您的檔案符合此分支)
+      else if (data.spdxVersion) {
+        format = `SPDX ${data.spdxVersion}`;
+        isFormatValid = true;
+        rawComponents = data.packages || [];
+        hasDependencies = !!(data.relationships && data.relationships.length > 0);
+
+        if (data.creationInfo) {
+          if (Array.isArray(data.creationInfo.creators)) {
+            // 篩選並過濾掉 SPDX 規格內常見的 Tool: / Organization: 前綴
+            creator = data.creationInfo.creators
+              .map(c => c.replace(/^(Tool:|Organization:|Person:)\s*/i, ''))
+              .join(", ");
+          }
+          timestamp = data.creationInfo.created || null;
+        }
+      }
+
+      // ==========================================
+      // 🌟 格式未通過時的紅字處理與阻擋邏輯 🌟
+      // ==========================================
+      const formatEl = document.getElementById('meta-format');
+      if (!isFormatValid) {
+        // 1. 變更格式文字為紅字 FAIL
+        formatEl.innerHTML = `<span class="text-rose-500 font-extrabold">❌ FAIL (未知格式)</span>`;
+        document.getElementById('meta-count').innerText = "-";
+        
+        // 2. 清空下方所有分析區塊，避免呈現錯亂資訊
+        document.getElementById('noassertion-list').innerHTML = "";
+        document.getElementById('noassertion-count').innerText = "0";
+        document.getElementById('noassertion-ratio').innerText = "佔全體元件 0%";
+        document.getElementById('ntia-checklist').innerHTML = "";
+        
+        // 3. 跳出最上方的紅色全域錯誤提示，並中斷執行
+        showError("無法辨識該檔案的 SBOM 格式。此工具目前僅支援標準的 CycloneDX (JSON) 或 SPDX (JSON) 格式。");
+        return; // 中斷後續分析
+      } else {
+        // 若格式正常，恢復正常樣式與文字
+        formatEl.innerHTML = `<span class="font-bold text-teal-300">${format}</span>`;
+      }
+
+      // ==========================================
+      // 關鍵過濾邏輯：排除代表 Document 的虛擬 Package
+      // ==========================================
+      const docName = data.name; 
+      const components = rawComponents.filter(c => {
+        if (c.SPDXID === "SPDXRef-DOCUMENT") return false;
+        if (c.name === docName && !c.version && !c.versionInfo) return false;
+        return true;
+      });
+
+      // 計算整份 JSON 中 filename 的欄位數量
+      const totalFilesCount = countFilenameKeys(data);
+      document.getElementById('meta-count').innerText = totalFilesCount;
+
+      // 2. NOASSERTION 欄位檢測
+      auditNoassertion(components);
+
+      // 3. 執行 NTIA 檢查
+      auditNtia(data, components, hasDependencies, creator, timestamp);
+    }
+
+    // 檢測 NOASSERTION 欄位
+    function auditNoassertion(components) {
+      const listEl = document.getElementById('noassertion-list');
+      listEl.innerHTML = "";
+
+      let noassertionCount = 0;
+      let matchedComponents = [];
+
+      components.forEach(c => {
+        const compStr = JSON.stringify(c);
+        if (compStr.includes("NOASSERTION")) {
+          noassertionCount++;
+          const loc = findComponentLine(c.name, c.version || c.versionInfo);
+          matchedComponents.push({
+            name: c.name || "未定義元件",
+            version: c.version || c.versionInfo || "未知",
+            line: loc.lineNum
+          });
+        }
+      });
+
+      document.getElementById('noassertion-count').innerText = noassertionCount;
+      const ratio = components.length > 0 ? Math.round((noassertionCount / components.length) * 100) : 0;
+      document.getElementById('noassertion-ratio').innerText = `佔全體元件 ${ratio}%`;
+
+      if (matchedComponents.length > 0) {
+        matchedComponents.forEach(item => {
+          const p = document.createElement('p');
+          p.className = "text-[11px] font-mono bg-yellow-950/20 text-yellow-400 p-1 rounded flex justify-between";
+          p.innerHTML = `<span>📦 ${item.name} (${item.version})</span><span class="text-yellow-500 font-bold">Line: ${item.line}</span>`;
+          listEl.appendChild(p);
+        });
+      } else {
+        listEl.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-2">🎉 未偵測到 NOASSERTION 欄位</p>`;
+      }
+    }
+
+    // 進行 NTIA 合規稽核
+    function auditNtia(data, components, hasDependencies, creator, timestamp) {
+      const checklistEl = document.getElementById('ntia-checklist');
+      checklistEl.innerHTML = "";
+
+      // ==========================================
+      // 1. 檢測：全域 SBOM 建立者 (Creator)
+      // ==========================================
+      const hasCreator = !!(creator && creator.trim() !== "" && creator !== "未標記");
+      let creatorFailedItems = [];
+      if (!hasCreator) {
+        const loc = findMetadataLine(data.bomFormat ? "metadata" : "creationInfo");
+        creatorFailedItems.push({
+          name: "SBOM 檔案檔頭",
+          version: "全域",
+          line: loc.lineNum,
+          snippet: loc.snippet
+        });
+      }
+      renderCheckItem(
+        checklistEl, 
+        "建立者名稱 (Creator / Author / Tool)", 
+        hasCreator, 
+        hasCreator ? `已偵測到建立者："${creator}"` : "未在 metadata 或 creationInfo 內找到有效的建立者 (Creator) 宣告。", 
+        creatorFailedItems
+      );
+
+      // ==========================================
+      // 2. 檢測：產生時間戳 (Timestamp)
+      // ==========================================
+      const hasTimestamp = !!(timestamp && timestamp.trim() !== "" && timestamp !== "未標記");
+      let timestampFailedItems = [];
+      if (!hasTimestamp) {
+        const loc = findMetadataLine(data.bomFormat ? "timestamp" : "created");
+        timestampFailedItems.push({
+          name: "SBOM 檔案檔頭",
+          version: "全域",
+          line: loc.lineNum,
+          snippet: loc.snippet
+        });
+      }
+      renderCheckItem(
+        checklistEl, 
+        "產生時間戳 (Timestamp / Created Date)", 
+        hasTimestamp, 
+        hasTimestamp ? `已偵測到產生時間："${timestamp}"` : "未找到 SBOM 檔案的建立時間戳記 (Timestamp)。", 
+        timestampFailedItems
+      );
+
+      // ==========================================
+      // 3. 元件級屬性檢測規章 (相容 SPDX 與 CycloneDX)
+      // ==========================================
+      const checkSpecs = [
+        {
+          id: "supplier",
+          name: "供應商/發行者名稱 (Supplier / Publisher)",
+          validator: (c) => {
+            // 1. 標準欄位檢查 (自帶 supplier, publisher, group, vendor)
+            if (c.publisher || c.originator || c.group || c.vendor) return true;
+            if (c.supplier && (c.supplier.name || typeof c.supplier === 'string')) return true;
+            
+            // 2. ⚡ 實務增強 A：CPE 檢查 (只要有合法的 CPE 即可追溯發行組織)
+            if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) {
+              return true;
+            }
+            // 考慮部分工具會將 cpe 放進陣列中 (例如 cpes: ["cpe:..."])
+            if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) {
+              return true;
+            }
+
+            // 3. ⚡ 實務增強 B：PURL 智慧型解析
+            if (c.purl && typeof c.purl === 'string') {
+              try {
+                const purePurl = c.purl.replace(/^pkg:/, '');
+                const parts = purePurl.split('/');
+                
+                if (parts.length >= 2) {
+                  const type = parts[0].toLowerCase(); // e.g., "npm", "pypi", "hex"
+                  
+                  // 主流公開套件管理器：套件本身已有明確註冊中心歸屬，實務上視為可追溯
+                  const publicRegistries = ['npm', 'pypi', 'cargo', 'gem', 'golang', 'nuget', 'cocoapods', 'maven', 'hex'];
+                  if (publicRegistries.includes(type)) {
+                    return true;
+                  }
+                  
+                  // generic 類型：只要元件有名稱，即視為自帶專案發行線索
+                  if (type === 'generic' && c.name) {
+                    return true;
+                  }
+                  
+                  // 帶有命名空間的其他類型 (如 github/webrtc-uwp)
+                  if (parts.length >= 3) {
+                    const namespace = parts[1];
+                    if (namespace) return true;
+                  }
+                }
+              } catch (e) {
+                // 忽略解析錯誤
+              }
+            }
+            return false;
+          },
+          passDesc: "所有元件皆已標示供應商名稱，或具備 CPE 識別碼、PURL（可追溯至 hex, npm, PyPI 等註冊中心），符合軟體追溯性標準。",
+          warnDesc: "部分內部元件或未知來源套件缺乏明確的發行商標示，且無法自 CPE 或 PURL 中追溯發行組織。"
+        },
+        {
+          id: "hash",
+          name: "密碼學雜湊值 (Cryptographic Hash / SHA-256)",
+          validator: (c) => {
+            // ==========================================
+            // 🛡️ 實質欄位檢查 (優先權最高)
+            // 只要宣告了任何雜湊欄位，不論是 Package 還是 File 節點，
+            // 只要找不到合格的 SHA-256，一律判定為 FAIL。
+            // ==========================================
+            
+            // 1. SPDX 雜湊校驗 (支援 Package 與 File 節點的 checksums 欄位)
+            if (c.checksums && Array.isArray(c.checksums) && c.checksums.length > 0) {
+              const hasSHA256 = c.checksums.some(ch => {
+                const alg = (ch.algorithm || "").toUpperCase().replace("-", "");
+                const val = ch.checksumValue || "";
+                return alg === "SHA256" && val.length === 64;
+              });
+
+              // 關鍵關鍵：只要有 checksums 欄位，但檢查出來不含 SHA-256，
+              // 這裡就必須「一刀切」直接回傳 false (FAIL)，絕對不能往下走任何豁免流程！
+              if (!hasSHA256) {
+                return false; 
+              }
+              return true;
+            }
+
+            // 2. CycloneDX 雜湊校驗
+            if (c.hashes && Array.isArray(c.hashes) && c.hashes.length > 0) {
+              const hasSHA256 = c.hashes.some(h => {
+                const alg = (h.alg || h.algorithm || "").toUpperCase().replace("-", "");
+                return alg === "SHA256" && h.content && h.content.length === 64;
+              });
+
+              if (!hasSHA256) {
+                return false;
+              }
+              return true;
+            }
+
+            // ==========================================
+            // 🌟 智慧豁免 A：SPDX filesAnalyzed 為 false
+            // (確保只有明確標示為不需要分析的 Package 才能豁免)
+            // ==========================================
+            if (c.filesAnalyzed === false) {
+              return true; 
+            }
+
+            // ==========================================
+            // 🌟 智慧豁免 B：私有/內部開發套件豁免
+            // ==========================================
+            const name = c.name || c.fileName || ""; // 相容 file 節點的命名
+            if (
+              name.startsWith("@uservice-lib/") || 
+              name.startsWith("@local/") || 
+              name.startsWith("@internal/")
+            ) {
+              return true;
+            }
+
+            // ==========================================
+            // 🌟 智慧豁免 C：Android / 韌體映像檔頂層 Package 豁免
+            // 嚴格限制：只有「不具備 fileName（即不是單一檔案）」且「不具備任何 checksums/hashes 欄位」
+            // 的頂層 Package 元件，才允許使用 Verification Code 豁免。
+            // ==========================================
+            if (!c.fileName && c.packageVerificationCode && c.packageVerificationCode.packageVerificationCodeValue) {
+              return true;
+            }
+
+            // 若既無合格的 SHA-256，也無法取得豁免，則判定不通過
+            return false;
+          },
+          passDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因頂層套件驗證碼機制、內部開發套件而合理豁免），符合防篡改標準。",
+          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法（例如僅提供過時的 SHA-1）」，這將削弱防篡改的稽核完整度。請注意：SHA-256 為必要項目。即使支援 SHA-512，若無 SHA-256 仍判定為不合規。"
+        }
+      ];
+
+      checkSpecs.forEach(spec => {
+        let failedItems = [];
+        components.forEach(c => {
+          if (!spec.validator(c)) {
+            const ver = c.version || c.versionInfo || "未知";
+            const loc = findComponentLine(c.name, ver);
+            failedItems.push({
+              name: c.name || "未定義元件",
+              version: ver,
+              line: loc.lineNum,
+              snippet: loc.snippet
+            });
+          }
+        });
+
+        const isPass = failedItems.length === 0;
+        const finalDesc = isPass ? spec.passDesc : spec.warnDesc;
+        renderCheckItem(checklistEl, spec.name, isPass, finalDesc, failedItems);
+      });
+
+      // ==========================================
+      // 4. 系統級檢測：依賴關係樹 (Dependency Tree)
+      // ==========================================
+      const depDesc = hasDependencies 
+        ? "成功檢索到元件樹狀依賴關聯 (Dependency/Relationship Trees)." 
+        : "缺少相依關係欄位 (dependencies / relationships)，物料清單無法建立樹狀依賴鏈結。";
+      renderCheckItem(checklistEl, "相依關係 (Dependency Relationship Tree)", hasDependencies, depDesc, []);
+    }
+
+    // 渲染單個 NTIA 稽核項目（含細節抽屜）
+    function renderCheckItem(container, title, pass, desc, failedItems) {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = `border rounded-xl p-4 transition-all duration-150 ${pass ? 'bg-teal-950/10 border-teal-900/60' : 'bg-yellow-950/10 border-yellow-900/60'}`;
+
+      const icon = pass 
+        ? `<svg class="w-5 h-5 text-teal-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+        : `<svg class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+
+      let errorListHtml = "";
+      if (failedItems.length > 0) {
+        errorListHtml = `
+          <div class="mt-3 pt-3 border-t border-yellow-900/30 space-y-2">
+            <span class="text-xs font-bold text-yellow-500 block">⚠️ 發生錯誤的位置與原始碼行號：</span>
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              ${failedItems.map(item => `
+                <div class="bg-gray-900 p-2 rounded text-xs border border-gray-800">
+                  <div class="flex justify-between text-[11px] font-semibold text-gray-400 mb-1">
+                    <span>📦 位置: ${item.name} (${item.version})</span>
+                    <span class="text-rose-400 font-mono">第 ${item.line} 行附近</span>
+                  </div>
+                  <pre class="bg-black/40 text-gray-300 p-1.5 rounded font-mono text-[10px] overflow-x-auto whitespace-pre-wrap"><code>${escapeHtml(item.snippet)}</code></pre>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      itemDiv.innerHTML = `
+        <div class="flex items-start gap-3">
+          ${icon}
+          <div class="w-full">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-sm ${pass ? 'text-teal-300' : 'text-yellow-300'}">${title}</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded ${pass ? 'bg-teal-900/50 text-teal-400' : 'bg-yellow-900/50 text-yellow-400'}">
+                ${pass ? 'PASS' : 'WARNING'}
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">${desc}</p>
+            ${errorListHtml}
+          </div>
+        </div>
+      `;
+      container.appendChild(itemDiv);
+    }
+
+    // HTML 跳脫防注入處理
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
