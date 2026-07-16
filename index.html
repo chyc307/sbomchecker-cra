@@ -116,7 +116,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.1.0</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.2.0</span>
       </div>
 
     </div>
@@ -484,27 +484,27 @@
           validator: (c) => {
             // ==========================================
             // 🌟 智慧豁免：SPDX 專屬參照實體 (SPDXID) 豁免
-            // 只要元件宣告了 SPDXID 欄位，即視為內部定義或平台特有組件，合理豁免 CPE/PURL 檢測
             // ==========================================
             if (c.SPDXID && typeof c.SPDXID === 'string' && c.SPDXID.trim() !== "") {
               return true;
             }
 
-            // 1. CPE 檢查
+            // 1. CPE 檢查 (只要有合法的 CPE 格式即通過)
             if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
             if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
 
-            // 2. PURL 智慧型解析與校驗
+            // 2. PURL 泛用型智慧解析與校驗
             if (c.purl && typeof c.purl === 'string') {
               try {
-                const purePurl = c.purl.replace(/^pkg:/, '');
-                const parts = purePurl.split('/');
-                if (parts.length >= 2) {
-                  const type = parts[0].toLowerCase();
-                  const publicRegistries = ['npm', 'pypi', 'cargo', 'gem', 'golang', 'nuget', 'cocoapods', 'maven', 'hex'];
-                  if (publicRegistries.includes(type)) return true;
-                  if (type === 'generic' && c.name) return true;
-                  if (parts.length >= 3 && parts[1]) return true; // 帶有 namespace
+                const purePurl = c.purl.trim();
+                // 使用標準 PURL 格式匹配：必須以 pkg: 開頭，後面接著 [a-zA-Z0-9-._]+ (套件類型)
+                // 例如：pkg:pub/..., pkg:npm/..., pkg:cargo/...
+                if (/^pkg:[a-zA-Z0-9-._]+\//i.test(purePurl)) {
+                  // 進一步確保格式切分後，至少包含 type 與 name/version 等結構
+                  const parts = purePurl.replace(/^pkg:/i, '').split('/');
+                  if (parts.length >= 2 && parts[0] && parts[1]) {
+                    return true; 
+                  }
                 }
               } catch (e) {
                 // 忽略解析錯誤
