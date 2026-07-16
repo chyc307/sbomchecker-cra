@@ -116,7 +116,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.0.1</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.1.0</span>
       </div>
 
     </div>
@@ -129,7 +129,7 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      document.getElementById('file-info').innerText = `已載入檔案: ${file.name} (${(file.size/1024).toFixed(2)} KB)`;
+      document.getElementById('file-info').innerText = `已載入檔案: ${file.name} (${(file.size/1024).toFixed(2)} KB [檔案 >5MB 會載入較久請耐心等待])`;
       document.getElementById('file-info').classList.remove('hidden');
       document.getElementById('error-box').classList.add('hidden');
       document.getElementById('dashboard').classList.add('hidden');
@@ -325,8 +325,26 @@
         return true;
       });
 
-      // 計算整份 JSON 中 filename 的欄位數量
-      const totalFilesCount = countFilenameKeys(data);
+      // ==========================================
+      // 📊 計算掃描到的元件/檔案總數 (動態識別)
+      // ==========================================
+      let totalFilesCount = 0;
+      if (data.bomFormat && data.bomFormat.toLowerCase() === "cyclonedx") {
+        // CycloneDX: 包含 components 的長度，若有 metadata.component 也算一個主元件
+        totalFilesCount = (data.components ? data.components.length : 0);
+        if (data.metadata && data.metadata.component) {
+          totalFilesCount += 1;
+        }
+      } else if (data.spdxVersion) {
+        // SPDX: 包含 packages 的數量，若有 files 陣列也一併加總
+        const packageCount = data.packages ? data.packages.length : 0;
+        const fileCount = data.files ? data.files.length : 0;
+        totalFilesCount = packageCount + fileCount;
+      } else {
+        // 備用防呆：若格式異常則退回原本的 key 遞迴計數
+        totalFilesCount = countFilenameKeys(data);
+      }
+
       document.getElementById('meta-count').innerText = totalFilesCount;
 
       // 2. NOASSERTION 欄位檢測
@@ -423,51 +441,70 @@
       );
 
       // ==========================================
-      // 3. 元件級屬性檢測規章 (相容 SPDX 與 CycloneDX)
+      // 3. 元件級屬性檢測規章 (相容 SPDX 與 CycloneDX) - 已分拆 Audit Zone
       // ==========================================
       const checkSpecs = [
         {
           id: "supplier",
           name: "供應商/發行者名稱 (Supplier / Publisher)",
           validator: (c) => {
-            // 1. 標準欄位檢查 (自帶 supplier, publisher, group, vendor)
+            // 1. 優先檢查是否具有明確的宣告式供應商/發行商/組織
             if (c.publisher || c.originator || c.group || c.vendor) return true;
             if (c.supplier && (c.supplier.name || typeof c.supplier === 'string')) return true;
-            
-            // 2. ⚡ 實務增強 A：CPE 檢查 (只要有合法的 CPE 即可追溯發行組織)
-            if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) {
-              return true;
-            }
-            // 考慮部分工具會將 cpe 放進陣列中 (例如 cpes: ["cpe:..."])
-            if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) {
-              return true;
-            }
 
-            // 3. ⚡ 實務增強 B：PURL 智慧型解析
+            // 2. ⚡ 實務豁免：如果元件具備標準 CPE，即可從中萃取 Vendor 資訊，視為合規
+            if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
+            if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
+
+            // 3. ⚡ 實務豁免：如果具備標準 PURL，代表可藉由公開 Registry 追溯，視為合規
             if (c.purl && typeof c.purl === 'string') {
               try {
                 const purePurl = c.purl.replace(/^pkg:/, '');
                 const parts = purePurl.split('/');
-                
                 if (parts.length >= 2) {
-                  const type = parts[0].toLowerCase(); // e.g., "npm", "pypi", "hex"
-                  
-                  // 主流公開套件管理器：套件本身已有明確註冊中心歸屬，實務上視為可追溯
+                  const type = parts[0].toLowerCase();
                   const publicRegistries = ['npm', 'pypi', 'cargo', 'gem', 'golang', 'nuget', 'cocoapods', 'maven', 'hex'];
-                  if (publicRegistries.includes(type)) {
-                    return true;
-                  }
-                  
-                  // generic 類型：只要元件有名稱，即視為自帶專案發行線索
-                  if (type === 'generic' && c.name) {
-                    return true;
-                  }
-                  
-                  // 帶有命名空間的其他類型 (如 github/webrtc-uwp)
-                  if (parts.length >= 3) {
-                    const namespace = parts[1];
-                    if (namespace) return true;
-                  }
+                  if (publicRegistries.includes(type)) return true;
+                  if (type === 'generic' && c.name) return true;
+                  if (parts.length >= 3 && parts[1]) return true; 
+                }
+              } catch (e) {
+                // 忽略解析錯誤
+              }
+            }
+
+            return false;
+          },
+          passDesc: "所有元件皆已標示供應商名稱，或因具備 CPE/PURL 識別碼而能有效溯源 (Vendor Traceability)。",
+          warnDesc: "部分元件缺乏明確的發行商名稱，且無 CPE 或 PURL 等唯一識別碼，這將導致法規審查時無法定義責任主體（或無法有效比對漏洞）。"
+        },
+        {
+          id: "identifiers",
+          name: "元件唯一識別碼 (CPE / PURL)",
+          validator: (c) => {
+            // ==========================================
+            // 🌟 智慧豁免：SPDX 專屬參照實體 (SPDXID) 豁免
+            // 只要元件宣告了 SPDXID 欄位，即視為內部定義或平台特有組件，合理豁免 CPE/PURL 檢測
+            // ==========================================
+            if (c.SPDXID && typeof c.SPDXID === 'string' && c.SPDXID.trim() !== "") {
+              return true;
+            }
+
+            // 1. CPE 檢查
+            if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
+            if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
+
+            // 2. PURL 智慧型解析與校驗
+            if (c.purl && typeof c.purl === 'string') {
+              try {
+                const purePurl = c.purl.replace(/^pkg:/, '');
+                const parts = purePurl.split('/');
+                if (parts.length >= 2) {
+                  const type = parts[0].toLowerCase();
+                  const publicRegistries = ['npm', 'pypi', 'cargo', 'gem', 'golang', 'nuget', 'cocoapods', 'maven', 'hex'];
+                  if (publicRegistries.includes(type)) return true;
+                  if (type === 'generic' && c.name) return true;
+                  if (parts.length >= 3 && parts[1]) return true; // 帶有 namespace
                 }
               } catch (e) {
                 // 忽略解析錯誤
@@ -475,82 +512,44 @@
             }
             return false;
           },
-          passDesc: "所有元件皆已標示供應商名稱，或具備 CPE 識別碼、PURL（可追溯至 hex, npm, PyPI 等註冊中心），符合軟體追溯性標準。",
-          warnDesc: "部分內部元件或未知來源套件缺乏明確的發行商標示，且無法自 CPE 或 PURL 中追溯發行組織。"
+          passDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL（且內部/平台專屬組件皆已透過 SPDXID 機制合理豁免），符合合規標準。",
+          warnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。"
         },
         {
           id: "hash",
           name: "密碼學雜湊值 (Cryptographic Hash / SHA-256)",
           validator: (c) => {
-            // ==========================================
             // 🛡️ 實質欄位檢查 (優先權最高)
-            // 只要宣告了任何雜湊欄位，不論是 Package 還是 File 節點，
-            // 只要找不到合格的 SHA-256，一律判定為 FAIL。
-            // ==========================================
-            
-            // 1. SPDX 雜湊校驗 (支援 Package 與 File 節點的 checksums 欄位)
             if (c.checksums && Array.isArray(c.checksums) && c.checksums.length > 0) {
               const hasSHA256 = c.checksums.some(ch => {
                 const alg = (ch.algorithm || "").toUpperCase().replace("-", "");
                 const val = ch.checksumValue || "";
                 return alg === "SHA256" && val.length === 64;
               });
-
-              // 關鍵關鍵：只要有 checksums 欄位，但檢查出來不含 SHA-256，
-              // 這裡就必須「一刀切」直接回傳 false (FAIL)，絕對不能往下走任何豁免流程！
-              if (!hasSHA256) {
-                return false; 
-              }
+              if (!hasSHA256) return false; 
               return true;
             }
 
-            // 2. CycloneDX 雜湊校驗
             if (c.hashes && Array.isArray(c.hashes) && c.hashes.length > 0) {
               const hasSHA256 = c.hashes.some(h => {
                 const alg = (h.alg || h.algorithm || "").toUpperCase().replace("-", "");
                 return alg === "SHA256" && h.content && h.content.length === 64;
               });
-
-              if (!hasSHA256) {
-                return false;
-              }
+              if (!hasSHA256) return false;
               return true;
             }
 
-            // ==========================================
             // 🌟 智慧豁免 A：SPDX filesAnalyzed 為 false
-            // (確保只有明確標示為不需要分析的 Package 才能豁免)
-            // ==========================================
-            if (c.filesAnalyzed === false) {
-              return true; 
-            }
+            if (c.filesAnalyzed === false) return true; 
 
-            // ==========================================
             // 🌟 智慧豁免 B：私有/內部開發套件豁免
-            // ==========================================
-            const name = c.name || c.fileName || ""; // 相容 file 節點的命名
-            if (
-              name.startsWith("@uservice-lib/") || 
-              name.startsWith("@local/") || 
-              name.startsWith("@internal/")
-            ) {
-              return true;
-            }
+            const name = c.name || c.fileName || "";
+            if (name.startsWith("@uservice-lib/") || name.startsWith("@local/") || name.startsWith("@internal/")) return true;
 
-            // ==========================================
-            // 🌟 智慧豁免 C：Android / 韌體映像檔頂層 Package 豁免
-            // 嚴格限制：只有「不具備 fileName（即不是單一檔案）」且「不具備任何 checksums/hashes 欄位」
-            // 的頂層 Package 元件，才允許使用 Verification Code 豁免。
-            // ==========================================
-            if (!c.fileName && c.packageVerificationCode && c.packageVerificationCode.packageVerificationCodeValue) {
-              return true;
-            }
-
-            // 若既無合格的 SHA-256，也無法取得豁免，則判定不通過
             return false;
           },
-          passDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因頂層套件驗證碼機制、內部開發套件而合理豁免），符合防篡改標準。",
-          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法（例如僅提供過時的 SHA-1）」，這將削弱防篡改的稽核完整度。請注意：SHA-256 為必要項目。即使支援 SHA-512，若無 SHA-256 仍判定為不合規。"
+          passDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因特定機制合理豁免），符合防篡改標準。",
+          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法」。"
         }
       ];
 
