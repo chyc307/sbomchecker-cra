@@ -65,6 +65,14 @@
               <span class="text-gray-400 text-xs block">總掃描到的檔案數量</span>
               <span id="meta-count" class="font-mono font-bold text-gray-300">-</span>
             </div>
+            <div class="bg-gray-900 p-3 rounded">
+              <span class="text-gray-400 text-xs block">文件唯一識別碼 (serialNumber / documentNamespace)</span>
+              <span id="meta-docid" class="font-mono font-bold text-gray-300 text-xs break-all">-</span>
+            </div>
+            <div class="bg-gray-900 p-3 rounded">
+              <span class="text-gray-400 text-xs block">文件版本號 (Document Version)</span>
+              <span id="meta-docversion" class="font-mono font-bold text-gray-300">-</span>
+            </div>
           </div>
         </div>
 
@@ -91,7 +99,15 @@
       <div class="lg:col-span-2 space-y-6">
         <!-- NTIA Checklist -->
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-6">
-          <h2 class="text-lg font-semibold text-gray-200 mb-4">📝 CRA 最小合規屬性稽核 </h2>
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 class="text-lg font-semibold text-gray-200">📝 CRA 最小合規屬性稽核</h2>
+            <div class="flex items-center gap-3 text-[11px] text-gray-400">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-400 inline-block"></span>PASS 100%</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span>CAUTION ≥80%</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>FAIL &lt;80%</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>INFO 不適用/無法自動判定</span>
+            </div>
+          </div>
           <div class="space-y-4" id="ntia-checklist">
             <!-- Dynamic Injection -->
           </div>
@@ -122,7 +138,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.3.1</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.4.0</span>
       </div>
 
     </div>
@@ -130,6 +146,21 @@
 
   <script>
     let rawFileLines = []; // 儲存原始檔案的每一行，用於定位
+
+    const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
+
+    // 判斷欄位是否為「已聲明」的有效值。
+    // SPDX 規範中 NOASSERTION（未評估/未知）與 NONE（明確無值）在字面上是非空字串，
+    // 但語意上等同於「未提供」，若不過濾會被 JS 的 truthy 判斷誤判為合規。
+    function isAssertedValue(val) {
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') {
+        const v = val.trim().toUpperCase();
+        if (v === '' || v === 'NOASSERTION' || v === 'NONE') return false;
+        return true;
+      }
+      return true;
+    }
 
     function handleFileSelect(event) {
       const file = event.target.files[0];
@@ -243,8 +274,12 @@
       let isFormatValid = false; // 用於標記格式是否合法
       let creator = null;
       let timestamp = null;
+      let docId = null;      // 文件唯一識別碼 (serialNumber / documentNamespace)
+      let docVersion = null; // 文件版本號
+      let docVersionApplicable = true; // SPDX 規範無原生文件版本欄位，設為不適用 (INFO)
       let rawComponents = []; // 暫存未過濾的元件
       let hasDependencies = false;
+      let depRefs = null; // 依賴關係圖中被引用到的識別碼集合（用於計算涵蓋率）
 
       // ==========================================
       // 1. 規格識別、建立者、時間戳與原始元件提取
@@ -256,7 +291,19 @@
         isFormatValid = true;
         rawComponents = data.components || [];
         hasDependencies = !!(data.dependencies && data.dependencies.length > 0);
-        
+
+        docId = data.serialNumber || null;
+        docVersion = (data.version !== undefined && data.version !== null) ? String(data.version) : null;
+        docVersionApplicable = true;
+
+        if (data.dependencies && Array.isArray(data.dependencies)) {
+          depRefs = new Set();
+          data.dependencies.forEach(d => {
+            if (d.ref) depRefs.add(d.ref);
+            if (Array.isArray(d.dependsOn)) d.dependsOn.forEach(r => depRefs.add(r));
+          });
+        }
+
         if (data.metadata) {
           if (data.metadata.tools) {
             if (Array.isArray(data.metadata.tools)) {
@@ -287,6 +334,18 @@
         rawComponents = data.packages || [];
         hasDependencies = !!(data.relationships && data.relationships.length > 0);
 
+        docId = data.documentNamespace || null;
+        docVersion = null;
+        docVersionApplicable = false; // SPDX 規範未定義原生的文件版本欄位
+
+        if (data.relationships && Array.isArray(data.relationships)) {
+          depRefs = new Set();
+          data.relationships.forEach(r => {
+            if (r.spdxElementId) depRefs.add(r.spdxElementId);
+            if (r.relatedSpdxElement) depRefs.add(r.relatedSpdxElement);
+          });
+        }
+
         if (data.creationInfo) {
           if (Array.isArray(data.creationInfo.creators)) {
             creator = data.creationInfo.creators
@@ -304,7 +363,9 @@
       if (!isFormatValid) {
         formatEl.innerHTML = `<span class="text-rose-500 font-extrabold">❌ FAIL (未知格式)</span>`;
         document.getElementById('meta-count').innerText = "-";
-        
+        document.getElementById('meta-docid').innerText = "-";
+        document.getElementById('meta-docversion').innerText = "-";
+
         document.getElementById('noassertion-list').innerHTML = "";
         document.getElementById('noassertion-count').innerText = "0";
         document.getElementById('noassertion-ratio').innerText = "佔全體元件 0%";
@@ -344,12 +405,16 @@
       }
 
       document.getElementById('meta-count').innerText = totalFilesCount;
+      document.getElementById('meta-docid').innerText = isAssertedValue(docId) ? docId : "(未偵測到)";
+      document.getElementById('meta-docversion').innerText = docVersionApplicable
+        ? (isAssertedValue(docVersion) ? docVersion : "(未偵測到)")
+        : "SPDX 規範無此欄位";
 
       // 2. NOASSERTION 欄位檢測
       auditNoassertion(components);
 
       // 3. 執行 NTIA 檢查
-      auditNtia(data, components, hasDependencies, creator, timestamp);
+      auditNtia(data, components, hasDependencies, creator, timestamp, docId, docVersion, docVersionApplicable, depRefs);
     }
 
     // 檢測 NOASSERTION 欄位
@@ -389,69 +454,130 @@
       }
     }
 
-    // 進行 NTIA 合規稽核
-    function auditNtia(data, components, hasDependencies, creator, timestamp) {
+    // 根據缺失比例計算三級狀態：pass (0% 缺失) / caution (缺失但合規率 >= 80%) / fail (合規率 < 80%)
+    function computeTier(failedCount, totalCount) {
+      if (totalCount <= 0) return 'pass';
+      if (failedCount === 0) return 'pass';
+      const passRatio = (totalCount - failedCount) / totalCount;
+      return passRatio >= 0.8 ? 'caution' : 'fail';
+    }
+
+    // 進行 NTIA / CRA 合規稽核
+    function auditNtia(data, components, hasDependencies, creator, timestamp, docId, docVersion, docVersionApplicable, depRefs) {
       const checklistEl = document.getElementById('ntia-checklist');
       checklistEl.innerHTML = "";
 
       const totalCompCount = components.length;
+      const isCdx = !!(data.bomFormat && data.bomFormat.toLowerCase() === "cyclonedx");
 
       // ==========================================
       // 1. 檢測：全域 SBOM 建立者 (Creator)
       // ==========================================
-      const hasCreator = !!(creator && creator.trim() !== "" && creator !== "未標記");
+      const hasCreator = isAssertedValue(creator);
       let creatorFailedItems = [];
       if (!hasCreator) {
-        const loc = findMetadataLine(data.bomFormat ? "metadata" : "creationInfo");
-        creatorFailedItems.push({
-          name: "SBOM 檔案檔頭",
-          version: "全域",
-          line: loc.lineNum,
-          snippet: loc.snippet
-        });
+        const loc = findMetadataLine(isCdx ? "metadata" : "creationInfo");
+        creatorFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
       }
       renderCheckItem(
-        checklistEl, 
-        "建立者名稱 (Creator / Author / Tool)", 
-        hasCreator, 
-        hasCreator ? `已偵測到建立者："${creator}"` : "未在 metadata 或 creationInfo 內找到有效的建立者 (Creator) 宣告。", 
-        creatorFailedItems,
-        1
+        checklistEl,
+        "建立者資訊 (Author / Creator)",
+        hasCreator ? 'pass' : 'fail',
+        hasCreator ? `已偵測到建立者："${creator}"` : "未在 metadata 或 creationInfo 內找到有效的建立者 (Creator) 宣告，CRA 要求每份 SBOM 必須標示產出組織或工具名稱。",
+        creatorFailedItems, 1
       );
 
       // ==========================================
-      // 2. 檢測：產生時間戳 (Timestamp)
+      // 2. 檢測：文件唯一識別碼 (Document Identification)
       // ==========================================
-      const hasTimestamp = !!(timestamp && timestamp.trim() !== "" && timestamp !== "未標記");
+      const hasDocId = isAssertedValue(docId);
+      let docIdFailedItems = [];
+      if (!hasDocId) {
+        const loc = findMetadataLine(isCdx ? "serialNumber" : "documentNamespace");
+        docIdFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+      }
+      renderCheckItem(
+        checklistEl,
+        "檔案識別碼 (Unique Document Identifier)",
+        hasDocId ? 'pass' : 'fail',
+        hasDocId
+          ? `已偵測到文件唯一識別碼："${docId}"`
+          : `未找到此 SBOM 文件的唯一識別編號（CycloneDX 應具備 "serialNumber"，SPDX 應具備 "documentNamespace"）。缺少此欄位將無法在多次交付版本間唯一定位此份文件。`,
+        docIdFailedItems, 1
+      );
+
+      // ==========================================
+      // 3. 檢測：產生時間戳 (Timestamp / ISO 8601)
+      // ==========================================
+      const hasTimestamp = isAssertedValue(timestamp);
+      const timestampFormatValid = hasTimestamp && ISO8601_RE.test(timestamp.trim());
       let timestampFailedItems = [];
+      let timestampTier = 'pass';
+      let timestampDesc = `已偵測到產生時間："${timestamp}"，且符合 ISO 8601 格式。`;
       if (!hasTimestamp) {
-        const loc = findMetadataLine(data.bomFormat ? "timestamp" : "created");
-        timestampFailedItems.push({
-          name: "SBOM 檔案檔頭",
-          version: "全域",
-          line: loc.lineNum,
-          snippet: loc.snippet
-        });
+        timestampTier = 'fail';
+        const loc = findMetadataLine(isCdx ? "timestamp" : "created");
+        timestampDesc = "未找到 SBOM 檔案的建立時間戳記 (Timestamp)。";
+        timestampFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+      } else if (!timestampFormatValid) {
+        timestampTier = 'caution';
+        const loc = findMetadataLine(isCdx ? "timestamp" : "created");
+        timestampDesc = `偵測到時間戳記："${timestamp}"，但格式不符合 CRA 要求的 ISO 8601（如 2024-05-23T13:51:37Z）。`;
+        timestampFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
       }
-      renderCheckItem(
-        checklistEl, 
-        "產生時間戳 (Timestamp / Created Date)", 
-        hasTimestamp, 
-        hasTimestamp ? `已偵測到產生時間："${timestamp}"` : "未找到 SBOM 檔案的建立時間戳記 (Timestamp)。", 
-        timestampFailedItems,
-        1
-      );
+      renderCheckItem(checklistEl, "時間戳記 (Timestamp / ISO 8601)", timestampTier, timestampDesc, timestampFailedItems, 1);
 
       // ==========================================
-      // 3. 元件級屬性檢測規章 (相容 SPDX 與 CycloneDX)
+      // 4. 檢測：文件版本號 (Document Version)
+      // ==========================================
+      if (!docVersionApplicable) {
+        renderCheckItem(
+          checklistEl,
+          "文件版本號 (Document Version)",
+          'info',
+          "SPDX 規範未定義原生的「文件版本」欄位，無法自動判定。建議透過 documentNamespace 中嵌入版次資訊，或於 creationInfo.comment 中補充版本說明以符合 CRA 要求。",
+          [], 1
+        );
+      } else {
+        const hasDocVersion = isAssertedValue(docVersion);
+        let docVerFailedItems = [];
+        if (!hasDocVersion) {
+          const loc = findMetadataLine("version");
+          docVerFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+        }
+        renderCheckItem(
+          checklistEl,
+          "文件版本號 (Document Version)",
+          hasDocVersion ? 'pass' : 'fail',
+          hasDocVersion ? `已偵測到文件版本號："${docVersion}"` : `未找到此份 SBOM 清單的文件版本號（CycloneDX 根層級 "version" 欄位）。`,
+          docVerFailedItems, 1
+        );
+      }
+
+      // ==========================================
+      // 5. 元件級屬性檢測規章 (相容 SPDX 與 CycloneDX)
       // ==========================================
       const checkSpecs = [
+        {
+          id: "name-version",
+          name: "組件名稱與版本 (Component Name / Version)",
+          validator: (c) => {
+            const name = c.name;
+            const version = c.version || c.versionInfo;
+            return isAssertedValue(name) && isAssertedValue(version);
+          },
+          passDesc: "所有元件皆完整標示組件名稱與具體版本號。",
+          warnDesc: "部分元件缺少名稱或版本號（或標示為 NOASSERTION/NONE），將導致無法精確比對該組件是否受特定 CVE 影響。"
+        },
         {
           id: "supplier",
           name: "供應商 / 發行者名稱 (Supplier / Publisher)",
           validator: (c) => {
-            if (c.publisher || c.originator || c.group || c.vendor) return true;
-            if (c.supplier && (c.supplier.name || typeof c.supplier === 'string')) return true;
+            if (isAssertedValue(c.publisher) || isAssertedValue(c.originator) || isAssertedValue(c.group) || isAssertedValue(c.vendor)) return true;
+            if (c.supplier) {
+              if (typeof c.supplier === 'string' && isAssertedValue(c.supplier)) return true;
+              if (typeof c.supplier === 'object' && isAssertedValue(c.supplier.name)) return true;
+            }
             if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
             if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
 
@@ -464,20 +590,19 @@
                   const publicRegistries = ['npm', 'pypi', 'cargo', 'gem', 'golang', 'nuget', 'cocoapods', 'maven', 'hex'];
                   if (publicRegistries.includes(type)) return true;
                   if (type === 'generic' && c.name) return true;
-                  if (parts.length >= 3 && parts[1]) return true; 
+                  if (parts.length >= 3 && parts[1]) return true;
                 }
               } catch (e) {}
             }
             return false;
           },
           passDesc: "所有元件皆已標示供應商名稱，或因 CPE/PURL 識別碼包含對應資訊而能有效溯源 (Vendor Traceability)。",
-          warnDesc: "部分元件缺乏明確的發行商名稱，且 CPE 或 PURL 等唯一識別碼不包含對應資訊，這將導致法規審查時無法定義責任主體（或無法有效比對漏洞）。"
+          warnDesc: "部分元件缺乏明確的發行商名稱（含標示為 NOASSERTION 者），且 CPE 或 PURL 等唯一識別碼不包含對應資訊，這將導致法規審查時無法定義責任主體。"
         },
         {
           id: "identifiers",
           name: "元件唯一識別碼 (CPE / PURL)",
           validator: (c) => {
-            if (c.SPDXID && typeof c.SPDXID === 'string' && c.SPDXID.trim() !== "") return true;
             if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
             if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
 
@@ -486,13 +611,24 @@
                 const purePurl = c.purl.trim();
                 if (/^pkg:[a-zA-Z0-9-._]+\//i.test(purePurl)) {
                   const parts = purePurl.replace(/^pkg:/i, '').split('/');
-                  if (parts.length >= 2 && parts[0] && parts[1]) return true; 
+                  if (parts.length >= 2 && parts[0] && parts[1]) return true;
                 }
               } catch (e) {}
             }
+
+            // SPDX 慣例：PURL / CPE 通常存放於 externalRefs（而非頂層 purl/cpe 欄位）
+            if (Array.isArray(c.externalRefs)) {
+              return c.externalRefs.some(ref => {
+                const type = (ref.referenceType || "").toLowerCase();
+                const loc = ref.referenceLocator || "";
+                if (type.includes("purl") && /^pkg:/i.test(loc)) return true;
+                if (type.includes("cpe") && /^cpe:/i.test(loc)) return true;
+                return false;
+              });
+            }
             return false;
           },
-          passDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL（且內部/平台專屬組件皆已透過 SPDXID 機制合理豁免），符合合規標準。",
+          passDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL，符合自動化漏洞比對之合規標準。",
           warnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。考慮到部份組件可能不適用 CPE / PURL ，因此一定的數量缺失可以接受，但合規率若低於 80% 則建議重新確認。"
         },
         {
@@ -505,7 +641,7 @@
                 const val = ch.checksumValue || "";
                 return alg === "SHA256" && val.length === 64;
               });
-              if (!hasSHA256) return false; 
+              if (!hasSHA256) return false;
               return true;
             }
 
@@ -518,7 +654,7 @@
               return true;
             }
 
-            if (c.filesAnalyzed === false) return true; 
+            if (c.filesAnalyzed === false) return true;
 
             const name = c.name || c.fileName || "";
             if (name.startsWith("@uservice-lib/") || name.startsWith("@local/") || name.startsWith("@internal/")) return true;
@@ -545,28 +681,63 @@
           }
         });
 
-        const isPass = failedItems.length === 0;
-        const finalDesc = isPass ? spec.passDesc : spec.warnDesc;
-        renderCheckItem(checklistEl, spec.name, isPass, finalDesc, failedItems, totalCompCount);
+        const tier = computeTier(failedItems.length, totalCompCount);
+        const finalDesc = tier === 'pass' ? spec.passDesc : spec.warnDesc;
+        renderCheckItem(checklistEl, spec.name, tier, finalDesc, failedItems, totalCompCount);
       });
 
       // ==========================================
-      // 4. 系統級檢測：依賴關係樹 (Dependency Tree)
+      // 6. 系統級檢測：依賴關係深度 (Dependency Depth)
       // ==========================================
-      const depDesc = hasDependencies 
-        ? "成功檢索到元件樹狀依賴關聯 (Dependency/Relationship Trees)." 
-        : "缺少依賴關係欄位 (dependencies / relationships)，物料清單無法建立樹狀依賴鏈結。";
-      renderCheckItem(checklistEl, "依賴關係 (Dependency Relationship Tree)", hasDependencies, depDesc, [], 1);
+      let depDesc;
+      if (!hasDependencies) {
+        depDesc = "缺少依賴關係欄位 (dependencies / relationships)，物料清單無法建立樹狀依賴鏈結，至少應涵蓋頂層相依性 (Top-level dependencies)。";
+      } else {
+        const coverage = (depRefs && totalCompCount > 0)
+          ? Math.round((Math.min(depRefs.size, totalCompCount) / totalCompCount) * 100)
+          : null;
+        depDesc = "成功檢索到元件樹狀依賴關聯 (Dependency/Relationship Trees)。"
+          + (coverage !== null ? ` 依賴圖涵蓋約 ${coverage}% 的元件（涵蓋率越高代表遞迴相依性 Transitive dependencies 揭露得越完整）。` : "");
+      }
+      renderCheckItem(checklistEl, "依賴關係深度 (Dependency Relationship Tree)", hasDependencies ? 'pass' : 'fail', depDesc, [], 1);
+
+      // ==========================================
+      // 7. 資訊卡：更新頻率 (Update Cadence) — 無法由單一檔案自動判定
+      // ==========================================
+      renderCheckItem(
+        checklistEl,
+        "更新頻率 (Update Cadence)",
+        'info',
+        "CRA 要求每次新的編譯 (Build) 或發布 (Release) 皆須產出對應的新版 SBOM。此屬性屬於流程管控，無法從單一 SBOM 快照自動驗證，請另行核對版本控制/發布紀錄，確認 SBOM 產出頻率與軟體發布頻率一致。",
+        [], 1
+      );
     }
 
-    // 渲染單個 NTIA 稽核項目（含統計資訊與細節抽屜）
-    function renderCheckItem(container, title, pass, desc, failedItems, totalCount = 0) {
-      const itemDiv = document.createElement('div');
-      itemDiv.className = `border rounded-xl p-4 transition-all duration-150 ${pass ? 'bg-teal-950/10 border-teal-900/60' : 'bg-yellow-950/10 border-yellow-900/60'}`;
+    // 各狀態層級所對應的樣式定義
+    const TIER_STYLES = {
+      pass:    { box: 'bg-teal-950/10 border-teal-900/60',   text: 'text-teal-300',   badge: 'bg-teal-900/50 text-teal-400',     label: 'PASS' },
+      caution: { box: 'bg-yellow-950/10 border-yellow-900/60', text: 'text-yellow-300', badge: 'bg-yellow-900/50 text-yellow-400', label: 'CAUTION' },
+      fail:    { box: 'bg-rose-950/10 border-rose-900/60',   text: 'text-rose-300',   badge: 'bg-rose-900/50 text-rose-400',     label: 'FAIL' },
+      info:    { box: 'bg-sky-950/10 border-sky-900/60',     text: 'text-sky-300',    badge: 'bg-sky-900/50 text-sky-400',       label: 'INFO' }
+    };
 
-      const icon = pass 
-        ? `<svg class="w-5 h-5 text-teal-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-        : `<svg class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+    function tierIcon(tier) {
+      if (tier === 'pass') {
+        return `<svg class="w-5 h-5 text-teal-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      }
+      if (tier === 'info') {
+        return `<svg class="w-5 h-5 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      }
+      const color = tier === 'fail' ? 'text-rose-500' : 'text-yellow-500';
+      return `<svg class="w-5 h-5 ${color} shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+    }
+
+    // 渲染單個 NTIA/CRA 稽核項目（含統計資訊與細節抽屜）
+    // tier: 'pass' | 'caution' | 'fail' | 'info'
+    function renderCheckItem(container, title, tier, desc, failedItems, totalCount = 0) {
+      const style = TIER_STYLES[tier] || TIER_STYLES.fail;
+      const itemDiv = document.createElement('div');
+      itemDiv.className = `border rounded-xl p-4 transition-all duration-150 ${style.box}`;
 
       let errorListHtml = "";
       if (failedItems.length > 0) {
@@ -575,10 +746,10 @@
         const passRatio = totalCount > 0 ? ((passCount / totalCount) * 100).toFixed(1) : "0.0";
 
         errorListHtml = `
-          <div class="mt-3 pt-3 border-t border-yellow-900/30 space-y-2">
-            <div class="flex items-center justify-between text-xs font-bold text-yellow-500">
+          <div class="mt-3 pt-3 border-t border-gray-800 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold ${style.text}">
               <span>⚠️ 發生錯誤的位置與原始碼行號：</span>
-              <span class="bg-yellow-950/80 border border-yellow-800/60 text-yellow-300 px-2 py-0.5 rounded font-mono text-[11px]">
+              <span class="bg-black/30 border border-gray-800 ${style.text} px-2 py-0.5 rounded font-mono text-[11px]">
                 ${failedCount} / ${totalCount} 缺失 | 合規率 ${passRatio}%
               </span>
             </div>
@@ -599,12 +770,12 @@
 
       itemDiv.innerHTML = `
         <div class="flex items-start gap-3">
-          ${icon}
+          ${tierIcon(tier)}
           <div class="w-full">
             <div class="flex justify-between items-center">
-              <span class="font-bold text-sm ${pass ? 'text-teal-300' : 'text-yellow-300'}">${title}</span>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded ${pass ? 'bg-teal-900/50 text-teal-400' : 'bg-yellow-900/50 text-yellow-400'}">
-                ${pass ? 'PASS' : 'WARNING'}
+              <span class="font-bold text-sm ${style.text}">${title}</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded ${style.badge}">
+                ${style.label}
               </span>
             </div>
             <p class="text-xs text-gray-400 mt-1">${desc}</p>
@@ -627,5 +798,3 @@
   </script>
 </body>
 </html>
-
-```
