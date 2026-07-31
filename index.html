@@ -6,6 +6,44 @@
   <title>CRA SBOM Quality Analyzer</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #print-report { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #print-report, #print-report * { visibility: visible; }
+      #print-report {
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 24px;
+        color: #111;
+        background: #fff;
+        font-family: Arial, "Microsoft JhengHei", sans-serif;
+      }
+      #print-report h1 { font-size: 18px; margin-bottom: 4px; }
+      #print-report .pr-subtitle { font-size: 12px; color: #555; margin-bottom: 10px; }
+      #print-report h2 { font-size: 14px; margin: 16px 0 8px; border-bottom: 1px solid #999; padding-bottom: 4px; }
+      #print-report .pr-meta { border-collapse: collapse; font-size: 11px; margin-bottom: 8px; }
+      #print-report .pr-meta td { padding: 2px 8px 2px 0; vertical-align: top; }
+      #print-report .pr-meta td:first-child { color: #555; white-space: nowrap; }
+      #print-report .pr-item { break-inside: avoid; margin-bottom: 10px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; }
+      #print-report .pr-item-head { display: flex; justify-content: space-between; font-weight: bold; font-size: 12px; margin-bottom: 4px; }
+      #print-report .pr-badge { font-size: 10px; padding: 1px 8px; border-radius: 10px; border: 1px solid; }
+      #print-report .pr-pass .pr-badge { color: #0f766e; border-color: #0f766e; }
+      #print-report .pr-caution .pr-badge { color: #92400e; border-color: #92400e; }
+      #print-report .pr-fail .pr-badge { color: #9f1239; border-color: #9f1239; }
+      #print-report .pr-info .pr-badge { color: #0369a1; border-color: #0369a1; }
+      #print-report .pr-desc { font-size: 11px; color: #333; margin: 0 0 4px; }
+      #print-report .pr-fail-summary { font-size: 10px; font-weight: bold; color: #9f1239; margin-bottom: 4px; }
+      #print-report .pr-fail-table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+      #print-report .pr-fail-table th, #print-report .pr-fail-table td { border: 1px solid #ddd; padding: 2px 5px; text-align: left; }
+      #print-report .pr-fail-table th { background: #f2f2f2; }
+      #print-report .pr-note { font-size: 9.5px; color: #666; margin-top: 4px; }
+      @page { margin: 14mm; }
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
 
@@ -99,14 +137,20 @@
       <div class="lg:col-span-2 space-y-6">
         <!-- NTIA Checklist -->
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h2 class="text-lg font-semibold text-gray-200">📝 CRA 最小合規屬性稽核</h2>
+            <button onclick="generatePdfReport()" class="bg-teal-950 hover:bg-teal-900 text-teal-300 hover:text-teal-200 transition duration-150 text-xs font-semibold px-3 py-1.5 rounded border border-teal-800 flex items-center gap-1.5">
+              📄 匯出 PDF 報告
+            </button>
+          </div>
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div class="flex items-center gap-3 text-[11px] text-gray-400">
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-400 inline-block"></span>PASS 100%</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span>CAUTION ≥80%</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>FAIL &lt;80%</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span>CAUTION 部分缺失</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>FAIL 嚴重缺失</span>
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>INFO 不適用/無法自動判定</span>
             </div>
+            <span class="text-[10px] text-gray-500">※ CPE/PURL、SHA-256 缺失率 &gt;50% 才列為 FAIL；其餘項目缺失率 &gt;20% 即列為 FAIL</span>
           </div>
           <div class="space-y-4" id="ntia-checklist">
             <!-- Dynamic Injection -->
@@ -117,6 +161,9 @@
     </div>
 
   </main>
+
+  <!-- Hidden print-only report, populated by generatePdfReport() and rendered via window.print() -->
+  <div id="print-report"></div>
 
   <!-- Footer -->
   <footer class="border-t border-gray-800 bg-gray-950 py-6 px-8 mt-12">
@@ -138,7 +185,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.4.0</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.5.0</span>
       </div>
 
     </div>
@@ -146,6 +193,9 @@
 
   <script>
     let rawFileLines = []; // 儲存原始檔案的每一行，用於定位
+    let currentFileName = "";  // 目前載入的檔名，供 PDF 報告使用
+    let reportMeta = null;     // PDF 報告用的檔案層級資訊 (格式/文件ID/版本/元件數)
+    let auditRecords = [];     // PDF 報告用的逐項稽核結果（含失敗清單）
 
     const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
 
@@ -166,6 +216,7 @@
       const file = event.target.files[0];
       if (!file) return;
 
+      currentFileName = file.name;
       document.getElementById('file-info').innerText = `已載入檔案: ${file.name} (${(file.size/1024).toFixed(2)} KB [檔案 >5MB 會載入較久請耐心等待])`;
       document.getElementById('file-info').classList.remove('hidden');
       document.getElementById('error-box').classList.add('hidden');
@@ -370,7 +421,9 @@
         document.getElementById('noassertion-count').innerText = "0";
         document.getElementById('noassertion-ratio').innerText = "佔全體元件 0%";
         document.getElementById('ntia-checklist').innerHTML = "";
-        
+        reportMeta = null;
+        auditRecords = [];
+
         showError("無法辨識該檔案的 SBOM 格式。此工具目前僅支援標準的 CycloneDX (JSON) 或 SPDX (JSON) 格式。");
         return;
       } else {
@@ -409,6 +462,14 @@
       document.getElementById('meta-docversion').innerText = docVersionApplicable
         ? (isAssertedValue(docVersion) ? docVersion : "(未偵測到)")
         : "SPDX 規範無此欄位";
+
+      reportMeta = {
+        fileName: currentFileName,
+        format: format,
+        totalCount: totalFilesCount,
+        docId: isAssertedValue(docId) ? docId : null,
+        docVersion: docVersionApplicable ? (isAssertedValue(docVersion) ? docVersion : null) : "N/A（SPDX 規範無此欄位）"
+      };
 
       // 2. NOASSERTION 欄位檢測
       auditNoassertion(components);
@@ -454,18 +515,20 @@
       }
     }
 
-    // 根據缺失比例計算三級狀態：pass (0% 缺失) / caution (缺失但合規率 >= 80%) / fail (合規率 < 80%)
-    function computeTier(failedCount, totalCount) {
+    // 根據缺失比例計算三級狀態：pass (0% 缺失) / caution (合規率 >= minPassRatio) / fail (合規率 < minPassRatio)
+    // minPassRatio 預設 0.8（缺失 >20% 才列為 FAIL）；CPE/PURL 與 SHA-256 等較常見合理缺漏的欄位可傳入 0.5（缺失 >50% 才列為 FAIL）。
+    function computeTier(failedCount, totalCount, minPassRatio = 0.8) {
       if (totalCount <= 0) return 'pass';
       if (failedCount === 0) return 'pass';
       const passRatio = (totalCount - failedCount) / totalCount;
-      return passRatio >= 0.8 ? 'caution' : 'fail';
+      return passRatio >= minPassRatio ? 'caution' : 'fail';
     }
 
     // 進行 NTIA / CRA 合規稽核
     function auditNtia(data, components, hasDependencies, creator, timestamp, docId, docVersion, docVersionApplicable, depRefs) {
       const checklistEl = document.getElementById('ntia-checklist');
       checklistEl.innerHTML = "";
+      auditRecords = [];
 
       const totalCompCount = components.length;
       const isCdx = !!(data.bomFormat && data.bomFormat.toLowerCase() === "cyclonedx");
@@ -601,6 +664,7 @@
         },
         {
           id: "identifiers",
+          cautionThreshold: 0.5, // CPE/PURL 常見合理缺漏，缺失率 >50%（合規率 <50%）才列為 FAIL，否則列為 CAUTION
           name: "元件唯一識別碼 (CPE / PURL)",
           validator: (c) => {
             if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
@@ -629,10 +693,11 @@
             return false;
           },
           passDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL，符合自動化漏洞比對之合規標準。",
-          warnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。考慮到部份組件可能不適用 CPE / PURL ，因此一定的數量缺失可以接受，但合規率若低於 80% 則建議重新確認。"
+          warnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。考慮到部份組件可能不適用 CPE / PURL，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。"
         },
         {
           id: "hash",
+          cautionThreshold: 0.5, // SHA-256 常見合理缺漏（如未分析檔案），缺失率 >50%（合規率 <50%）才列為 FAIL，否則列為 CAUTION
           name: "密碼學雜湊值 (Cryptographic Hash / SHA-256)",
           validator: (c) => {
             if (c.checksums && Array.isArray(c.checksums) && c.checksums.length > 0) {
@@ -662,7 +727,7 @@
             return false;
           },
           passDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因特定機制合理豁免），符合防篡改標準。",
-          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法」。如僅提供 SHA-512 仍屬不合規，系統必須包含 SHA-256，若同時包含 SHA-1、SHA-256、SHA-512，則符合安全性規範。考慮到部份組件可能不適用 SHA-256 雜湊值，因此一定的數量缺失可以接受，但合規率若低於 80% 則建議重新確認。"
+          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法」。如僅提供 SHA-512 仍屬不合規，系統必須包含 SHA-256，若同時包含 SHA-1、SHA-256、SHA-512，則符合安全性規範。考慮到部份組件可能不適用 SHA-256 雜湊值，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。"
         }
       ];
 
@@ -681,7 +746,7 @@
           }
         });
 
-        const tier = computeTier(failedItems.length, totalCompCount);
+        const tier = computeTier(failedItems.length, totalCompCount, spec.cautionThreshold || 0.8);
         const finalDesc = tier === 'pass' ? spec.passDesc : spec.warnDesc;
         renderCheckItem(checklistEl, spec.name, tier, finalDesc, failedItems, totalCompCount);
       });
@@ -735,6 +800,8 @@
     // 渲染單個 NTIA/CRA 稽核項目（含統計資訊與細節抽屜）
     // tier: 'pass' | 'caution' | 'fail' | 'info'
     function renderCheckItem(container, title, tier, desc, failedItems, totalCount = 0) {
+      auditRecords.push({ title, tier, desc, failedItems, totalCount });
+
       const style = TIER_STYLES[tier] || TIER_STYLES.fail;
       const itemDiv = document.createElement('div');
       itemDiv.className = `border rounded-xl p-4 transition-all duration-150 ${style.box}`;
@@ -788,12 +855,67 @@
 
     // HTML 跳脫防注入處理
     function escapeHtml(text) {
-      return text
+      return String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // 每個檢查項目在 PDF 報告中最多列出的缺失明細筆數，避免超大 SBOM 產生無法列印的超長報告
+    const PDF_MAX_ITEMS_PER_CHECK = 150;
+    const TIER_LABEL = { pass: 'PASS', caution: 'CAUTION', fail: 'FAIL', info: 'INFO' };
+
+    // 產生 PDF 報告：條列每個檢查點的結果 (PASS/CAUTION/FAIL/INFO) 及缺失元件的位置與行號，
+    // 透過瀏覽器原生列印（另存為 PDF）輸出，避免額外引入 PDF 產生函式庫的相依性。
+    function generatePdfReport() {
+      if (!reportMeta || auditRecords.length === 0) {
+        alert('請先上傳並成功解析一份 SBOM 檔案，再匯出報告。');
+        return;
+      }
+
+      const generatedAt = new Date().toLocaleString('zh-TW', { hour12: false });
+
+      let html = `
+        <h1>CRA SBOM 合規稽核報告</h1>
+        <div class="pr-subtitle">TÜV SÜD ENE Cyber Security Service</div>
+        <table class="pr-meta">
+          <tr><td>檔案名稱</td><td>${escapeHtml(reportMeta.fileName || '-')}</td></tr>
+          <tr><td>SBOM 格式</td><td>${escapeHtml(reportMeta.format || '-')}</td></tr>
+          <tr><td>元件總數</td><td>${escapeHtml(reportMeta.totalCount)}</td></tr>
+          <tr><td>文件唯一識別碼</td><td>${escapeHtml(reportMeta.docId || '(未偵測到)')}</td></tr>
+          <tr><td>文件版本號</td><td>${escapeHtml(reportMeta.docVersion || '(未偵測到)')}</td></tr>
+          <tr><td>報告產生時間</td><td>${escapeHtml(generatedAt)}</td></tr>
+        </table>
+        <h2>檢查項目結果（共 ${auditRecords.length} 項）</h2>
+      `;
+
+      auditRecords.forEach((rec, idx) => {
+        const label = TIER_LABEL[rec.tier] || String(rec.tier).toUpperCase();
+        html += `<div class="pr-item pr-${rec.tier}">
+          <div class="pr-item-head"><span>${idx + 1}. ${escapeHtml(rec.title)}</span><span class="pr-badge">${label}</span></div>
+          <p class="pr-desc">${escapeHtml(rec.desc)}</p>`;
+
+        if (rec.failedItems && rec.failedItems.length > 0) {
+          const failedCount = rec.failedItems.length;
+          const passRatio = rec.totalCount > 0 ? (((rec.totalCount - failedCount) / rec.totalCount) * 100).toFixed(1) : "0.0";
+          html += `<div class="pr-fail-summary">缺失 ${failedCount} / ${rec.totalCount}（合規率 ${passRatio}%）— 發生錯誤的位置與原始碼行號：</div>`;
+          html += `<table class="pr-fail-table"><thead><tr><th>#</th><th>組件名稱</th><th>版本</th><th>行號</th></tr></thead><tbody>`;
+          rec.failedItems.slice(0, PDF_MAX_ITEMS_PER_CHECK).forEach((item, i) => {
+            html += `<tr><td>${i + 1}</td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.version)}</td><td>${escapeHtml(item.line)}</td></tr>`;
+          });
+          html += `</tbody></table>`;
+          if (failedCount > PDF_MAX_ITEMS_PER_CHECK) {
+            html += `<p class="pr-note">僅列出前 ${PDF_MAX_ITEMS_PER_CHECK} 筆，其餘 ${failedCount - PDF_MAX_ITEMS_PER_CHECK} 筆請於網頁介面檢視完整清單。</p>`;
+          }
+        }
+
+        html += `</div>`;
+      });
+
+      document.getElementById('print-report').innerHTML = html;
+      window.print();
     }
   </script>
 </body>
