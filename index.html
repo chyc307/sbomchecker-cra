@@ -55,6 +55,10 @@
       <p class="text-xs text-gray-400 mt-1"><span id="ui-scan-cmd-label">推薦掃描指令：</span>SYFT_FILE_METADATA_SELECTION=all SYFT_FILE_METADATA_DIGESTS=sha256 syft scan ./"pathname" -o cyclonedx-json | python3 -m json.tool > "filename".json</p>
     </div>
     <div class="flex items-center gap-2 shrink-0">
+      <a href="https://chyc307.bobaboba.me" target="_blank" rel="noopener noreferrer" class="group relative bg-gray-900 hover:bg-gray-800 transition duration-150 text-sm w-7 h-7 flex items-center justify-center rounded border border-gray-700 shrink-0">
+        🧋
+        <span id="ui-boba-tooltip" class="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap bg-gray-800 text-gray-100 text-[11px] px-2 py-1 rounded border border-gray-700 opacity-0 group-hover:opacity-100 transition duration-150 shadow-lg z-50">幫 Cyber 團隊買包零食</span>
+      </a>
       <button id="lang-toggle-btn" onclick="toggleLanguage()" class="bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white transition duration-150 text-xs font-semibold px-2.5 py-1 rounded border border-gray-700 flex items-center gap-1.5">
         🌐 English
       </button>
@@ -190,7 +194,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.6.0</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.6.1</span>
       </div>
 
     </div>
@@ -381,6 +385,7 @@
 
     // 純靜態（無插值）UI 文字的雙語對照表，key 為元素 id
     const STATIC_I18N = {
+      'ui-boba-tooltip': { zh: '幫 Cyber 團隊買包零食', en: 'Buy the Cyber team a snack' },
       'ui-privacy-note': { zh: '100% 本地端瀏覽器解析，請安心使用。', en: '100% local, in-browser parsing — your file never leaves this device.' },
       'ui-scan-cmd-label': { zh: '推薦掃描指令：', en: 'Recommended scan command: ' },
       'ui-upload-label': { zh: '選擇 SBOM JSON 檔案至此', en: 'Click or drop your SBOM JSON file here' },
