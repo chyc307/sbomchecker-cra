@@ -51,15 +51,20 @@
   <header class="border-b border-gray-800 bg-gray-950 py-6 px-8 flex justify-between items-center">
     <div>
       <h1 class="text-2xl font-bold text-teal-400">🛡️ CRA SBOM Quality Analyzer</h1>
-      <p class="text-xs text-white-400 mt-1">100% 本地端瀏覽器解析，請安心使用。</p>
-      <p class="text-xs text-gray-400 mt-1">推薦掃描指令：SYFT_FILE_METADATA_SELECTION=all SYFT_FILE_METADATA_DIGESTS=sha256 syft scan ./"pathname" -o cyclonedx-json | python3 -m json.tool > "filename".json</p>
+      <p id="ui-privacy-note" class="text-xs text-white-400 mt-1">100% 本地端瀏覽器解析，請安心使用。</p>
+      <p class="text-xs text-gray-400 mt-1"><span id="ui-scan-cmd-label">推薦掃描指令：</span>SYFT_FILE_METADATA_SELECTION=all SYFT_FILE_METADATA_DIGESTS=sha256 syft scan ./"pathname" -o cyclonedx-json | python3 -m json.tool > "filename".json</p>
     </div>
-    <a href="https://github.com/chyc307/sbomchecker-cra" target="_blank" rel="noopener noreferrer" class="bg-teal-950 text-teal-400 hover:bg-teal-900 hover:text-teal-300 transition duration-150 text-xs font-semibold px-2.5 py-1 rounded border border-teal-800 flex items-center gap-1.5">
-      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
-      </svg>
-      GitHub Repo ↗
-    </a>
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="lang-toggle-btn" onclick="toggleLanguage()" class="bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-white transition duration-150 text-xs font-semibold px-2.5 py-1 rounded border border-gray-700 flex items-center gap-1.5">
+        🌐 English
+      </button>
+      <a href="https://github.com/chyc307/sbomchecker-cra" target="_blank" rel="noopener noreferrer" class="bg-teal-950 text-teal-400 hover:bg-teal-900 hover:text-teal-300 transition duration-150 text-xs font-semibold px-2.5 py-1 rounded border border-teal-800 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+        </svg>
+        GitHub Repo ↗
+      </a>
+    </div>
   </header>
 
   <!-- Main Content -->
@@ -70,8 +75,8 @@
       <div class="max-w-md mx-auto">
         <label for="file-upload" class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 hover:border-teal-500 rounded-lg p-6 cursor-pointer bg-gray-900/50 transition duration-200">
           <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-          <span class="text-sm font-medium text-gray-300">選擇 SBOM JSON 檔案至此</span>
-          <span class="text-xs text-gray-500 mt-1">支援 CycloneDX (JSON) / SPDX (JSON)</span>
+          <span id="ui-upload-label" class="text-sm font-medium text-gray-300">選擇 SBOM JSON 檔案至此</span>
+          <span id="ui-upload-hint" class="text-xs text-gray-500 mt-1">支援 CycloneDX (JSON) / SPDX (JSON)</span>
           <input id="file-upload" type="file" class="hidden" accept=".json" onchange="handleFileSelect(event)">
         </label>
       </div>
@@ -80,7 +85,7 @@
 
     <!-- Error Alert -->
     <div id="error-box" class="bg-red-950/50 border border-red-800 text-red-300 px-4 py-3 rounded-lg hidden">
-      <strong class="font-bold">解析錯誤：</strong>
+      <strong id="ui-error-label" class="font-bold">解析錯誤：</strong>
       <span id="error-message" class="block sm:inline font-mono text-sm"></span>
     </div>
 
@@ -91,24 +96,24 @@
       <div class="space-y-6">
         <!-- Metadata Overview -->
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-6 space-y-4">
-          <h2 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+          <h2 id="ui-meta-header" class="text-lg font-semibold text-gray-200 flex items-center gap-2">
             📊 基本屬性與格式
           </h2>
           <div class="space-y-3 text-sm">
             <div class="bg-gray-900 p-3 rounded">
-              <span class="text-gray-400 text-xs block">SBOM 標準格式</span>
+              <span id="ui-meta-format-label" class="text-gray-400 text-xs block">SBOM 標準格式</span>
               <span id="meta-format" class="font-mono font-bold text-teal-300">-</span>
             </div>
             <div class="bg-gray-900 p-3 rounded">
-              <span class="text-gray-400 text-xs block">總掃描到的檔案數量</span>
+              <span id="ui-meta-count-label" class="text-gray-400 text-xs block">總掃描到的檔案數量</span>
               <span id="meta-count" class="font-mono font-bold text-gray-300">-</span>
             </div>
             <div class="bg-gray-900 p-3 rounded">
-              <span class="text-gray-400 text-xs block">文件唯一識別碼 (serialNumber / documentNamespace)</span>
+              <span id="ui-meta-docid-label" class="text-gray-400 text-xs block">文件唯一識別碼 (serialNumber / documentNamespace)</span>
               <span id="meta-docid" class="font-mono font-bold text-gray-300 text-xs break-all">-</span>
             </div>
             <div class="bg-gray-900 p-3 rounded">
-              <span class="text-gray-400 text-xs block">文件版本號 (Document Version)</span>
+              <span id="ui-meta-docver-label" class="text-gray-400 text-xs block">文件版本號 (Document Version)</span>
               <span id="meta-docversion" class="font-mono font-bold text-gray-300">-</span>
             </div>
           </div>
@@ -116,14 +121,14 @@
 
         <!-- NOASSERTION Detector -->
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-6 space-y-4">
-          <h2 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+          <h2 id="ui-noassertion-header" class="text-lg font-semibold text-gray-200 flex items-center gap-2">
             🔍 NOASSERTION 欄位檢測
           </h2>
-          <p class="text-xs text-gray-400">
+          <p id="ui-noassertion-desc" class="text-xs text-gray-400">
             <code>NOASSERTION</code> 代表元件資訊或授權條款處於未聲明狀態。若比例過高，將會降低 SBOM 的可信度與合規價值。建議若部份組件為組織自行開發，將 NOASSERTION 替換為組織名稱或開發者名稱。
           </p>
           <div class="bg-gray-900 p-4 rounded text-center space-y-1 border border-gray-800">
-            <span class="text-xs text-gray-400 block">偵測到含有 NOASSERTION 的元件</span>
+            <span id="ui-noassertion-stat-label" class="text-xs text-gray-400 block">偵測到含有 NOASSERTION 的元件</span>
             <span id="noassertion-count" class="text-2xl font-bold text-yellow-500 font-mono">0</span>
             <span id="noassertion-ratio" class="text-xs text-gray-500 block">佔全體元件 0%</span>
           </div>
@@ -138,19 +143,19 @@
         <!-- NTIA Checklist -->
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-6">
           <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <h2 class="text-lg font-semibold text-gray-200">📝 CRA 最小合規屬性稽核</h2>
+            <h2 id="ui-checklist-header" class="text-lg font-semibold text-gray-200">📝 CRA 最小合規屬性稽核</h2>
             <button onclick="generatePdfReport()" class="bg-teal-950 hover:bg-teal-900 text-teal-300 hover:text-teal-200 transition duration-150 text-xs font-semibold px-3 py-1.5 rounded border border-teal-800 flex items-center gap-1.5">
-              📄 匯出 PDF 報告
+              <span id="ui-pdf-btn-label">📄 匯出 PDF 報告</span>
             </button>
           </div>
           <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div class="flex items-center gap-3 text-[11px] text-gray-400">
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-400 inline-block"></span>PASS 100%</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span>CAUTION 部分缺失</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>FAIL 嚴重缺失</span>
-              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>INFO 不適用/無法自動判定</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-400 inline-block"></span><span id="ui-legend-pass">PASS 100%</span></span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span><span id="ui-legend-caution">CAUTION 部分缺失</span></span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span><span id="ui-legend-fail">FAIL 嚴重缺失</span></span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span><span id="ui-legend-info">INFO 不適用/無法自動判定</span></span>
             </div>
-            <span class="text-[10px] text-gray-500">※ CPE/PURL、SHA-256 缺失率 &gt;50% 才列為 FAIL；其餘項目缺失率 &gt;20% 即列為 FAIL</span>
+            <span id="ui-threshold-note" class="text-[10px] text-gray-500">※ CPE/PURL、SHA-256 缺失率 &gt;50% 才列為 FAIL；其餘項目缺失率 &gt;20% 即列為 FAIL</span>
           </div>
           <div class="space-y-4" id="ntia-checklist">
             <!-- Dynamic Injection -->
@@ -185,7 +190,7 @@
       
       <!-- Right Side: Version Badge -->
       <div class="flex items-center shrink-0">
-        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.5.0</span>
+        <span class="bg-gray-900 px-2.5 py-1 rounded text-gray-400 border border-gray-800 font-mono">v1.6.0</span>
       </div>
 
     </div>
@@ -196,8 +201,232 @@
     let currentFileName = "";  // 目前載入的檔名，供 PDF 報告使用
     let reportMeta = null;     // PDF 報告用的檔案層級資訊 (格式/文件ID/版本/元件數)
     let auditRecords = [];     // PDF 報告用的逐項稽核結果（含失敗清單）
+    let currentLang = 'zh';    // 目前介面語言：'zh' | 'en'
+    let lastParsedData = null; // 最近一次成功解析的 SBOM JSON，供切換語言時重新渲染用
 
     const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
+
+    // ==========================================
+    // 多語系字典：所有動態產生（含插值）的文字都透過 t(key, ...args) 取得。
+    // 值可以是純字串，也可以是回傳字串的函式（用於需要插入變數的句子）。
+    // ==========================================
+    const I18N = {
+      zh: {
+        unknown: "未知",
+        unknownFormat: "未知格式",
+        formatFailBadge: "❌ FAIL (未知格式)",
+        notDetected: "(未偵測到)",
+        undefinedComponent: "未定義元件",
+        globalHeader: "SBOM 檔案檔頭",
+        global: "全域",
+        spdxNoDocVersionField: "SPDX 規範無此欄位",
+        fieldMissing: (keyword) => `"${keyword}" 欄位遺失`,
+        fileInfoLoaded: (name, sizeKb) => `已載入檔案: ${name} (${sizeKb} KB [檔案 >5MB 會載入較久請耐心等待])`,
+        jsonParseError: (msg) => `JSON 語法毀損（可能發生截斷或不完整）。錯誤詳細資訊: ${msg}`,
+        unknownFormatError: "無法辨識該檔案的 SBOM 格式。此工具目前僅支援標準的 CycloneDX (JSON) 或 SPDX (JSON) 格式。",
+        noassertionRatio: (ratio) => `佔全體元件 ${ratio}%`,
+        noNoassertionFound: "🎉 未偵測到 NOASSERTION 欄位",
+
+        checkCreatorTitle: "建立者資訊 (Author / Creator)",
+        creatorPassDesc: (creator) => `已偵測到建立者："${creator}"`,
+        creatorFailDesc: "未在 metadata 或 creationInfo 內找到有效的建立者 (Creator) 宣告，CRA 要求每份 SBOM 必須標示產出組織或工具名稱。",
+
+        checkDocIdTitle: "檔案識別碼 (Unique Document Identifier)",
+        docIdPassDesc: (docId) => `已偵測到文件唯一識別碼："${docId}"`,
+        docIdFailDesc: `未找到此 SBOM 文件的唯一識別編號（CycloneDX 應具備 "serialNumber"，SPDX 應具備 "documentNamespace"）。缺少此欄位將無法在多次交付版本間唯一定位此份文件。`,
+
+        checkTimestampTitle: "時間戳記 (Timestamp / ISO 8601)",
+        timestampPassDesc: (ts) => `已偵測到產生時間："${ts}"，且符合 ISO 8601 格式。`,
+        timestampMissingDesc: "未找到 SBOM 檔案的建立時間戳記 (Timestamp)。",
+        timestampFormatBadDesc: (ts) => `偵測到時間戳記："${ts}"，但格式不符合 CRA 要求的 ISO 8601（如 2024-05-23T13:51:37Z）。`,
+
+        checkDocVersionTitle: "文件版本號 (Document Version)",
+        docVersionInfoDesc: "SPDX 規範未定義原生的「文件版本」欄位，無法自動判定。建議透過 documentNamespace 中嵌入版次資訊，或於 creationInfo.comment 中補充版本說明以符合 CRA 要求。",
+        docVersionPassDesc: (v) => `已偵測到文件版本號："${v}"`,
+        docVersionFailDesc: `未找到此份 SBOM 清單的文件版本號（CycloneDX 根層級 "version" 欄位）。`,
+
+        checkNameVersionTitle: "組件名稱與版本 (Component Name / Version)",
+        nameVersionPassDesc: "所有元件皆完整標示組件名稱與具體版本號。",
+        nameVersionWarnDesc: "部分元件缺少名稱或版本號（或標示為 NOASSERTION/NONE），將導致無法精確比對該組件是否受特定 CVE 影響。",
+
+        checkSupplierTitle: "供應商 / 發行者名稱 (Supplier / Publisher)",
+        supplierPassDesc: "所有元件皆已標示供應商名稱，或因 CPE/PURL 識別碼包含對應資訊而能有效溯源 (Vendor Traceability)。",
+        supplierWarnDesc: "部分元件缺乏明確的發行商名稱（含標示為 NOASSERTION 者），且 CPE 或 PURL 等唯一識別碼不包含對應資訊，這將導致法規審查時無法定義責任主體。",
+
+        checkIdentifiersTitle: "元件唯一識別碼 (CPE / PURL)",
+        identifiersPassDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL，符合自動化漏洞比對之合規標準。",
+        identifiersWarnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。考慮到部份組件可能不適用 CPE / PURL，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。",
+
+        checkHashTitle: "密碼學雜湊值 (Cryptographic Hash / SHA-256)",
+        hashPassDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因特定機制合理豁免），符合防篡改標準。",
+        hashWarnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法」。如僅提供 SHA-512 仍屬不合規，系統必須包含 SHA-256，若同時包含 SHA-1、SHA-256、SHA-512，則符合安全性規範。考慮到部份組件可能不適用 SHA-256 雜湊值，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。",
+
+        checkDependencyTitle: "依賴關係深度 (Dependency Relationship Tree)",
+        depMissingDesc: "缺少依賴關係欄位 (dependencies / relationships)，物料清單無法建立樹狀依賴鏈結，至少應涵蓋頂層相依性 (Top-level dependencies)。",
+        depFoundDesc: "成功檢索到元件樹狀依賴關聯 (Dependency/Relationship Trees)。",
+        depCoverageSuffix: (pct) => ` 依賴圖涵蓋約 ${pct}% 的元件（涵蓋率越高代表遞迴相依性 Transitive dependencies 揭露得越完整）。`,
+
+        checkUpdateCadenceTitle: "更新頻率 (Update Cadence)",
+        updateCadenceDesc: "CRA 要求每次新的編譯 (Build) 或發布 (Release) 皆須產出對應的新版 SBOM。此屬性屬於流程管控，無法從單一 SBOM 快照自動驗證，請另行核對版本控制/發布紀錄，確認 SBOM 產出頻率與軟體發布頻率一致。",
+
+        errorLocationsLabel: "⚠️ 發生錯誤的位置與原始碼行號：",
+        failedRatioLabel: (failed, total, ratio) => `${failed} / ${total} 缺失 | 合規率 ${ratio}%`,
+        locationLabel: "📦 位置: ",
+        nearLine: (line) => `第 ${line} 行附近`,
+
+        pdfTitle: "CRA SBOM 合規稽核報告",
+        pdfFileName: "檔案名稱",
+        pdfFormat: "SBOM 格式",
+        pdfTotalComponents: "元件總數",
+        pdfDocId: "文件唯一識別碼",
+        pdfDocVersion: "文件版本號",
+        pdfGeneratedAt: "報告產生時間",
+        pdfResultsHeading: (count) => `檢查項目結果（共 ${count} 項）`,
+        pdfFailSummary: (failed, total, ratio) => `缺失 ${failed} / ${total}（合規率 ${ratio}%）— 發生錯誤的位置與原始碼行號：`,
+        pdfColIndex: "#",
+        pdfColName: "組件名稱",
+        pdfColVersion: "版本",
+        pdfColLine: "行號",
+        pdfTruncationNote: (shown, remaining) => `僅列出前 ${shown} 筆，其餘 ${remaining} 筆請於網頁介面檢視完整清單。`,
+        pdfNoDataAlert: "請先上傳並成功解析一份 SBOM 檔案，再匯出報告。",
+        localeCode: 'zh-TW'
+      },
+      en: {
+        unknown: "Unknown",
+        unknownFormat: "Unknown Format",
+        formatFailBadge: "❌ FAIL (Unrecognized Format)",
+        notDetected: "(Not detected)",
+        undefinedComponent: "Unnamed Component",
+        globalHeader: "SBOM File Header",
+        global: "Global",
+        spdxNoDocVersionField: "Not defined in SPDX spec",
+        fieldMissing: (keyword) => `"${keyword}" field missing`,
+        fileInfoLoaded: (name, sizeKb) => `Loaded file: ${name} (${sizeKb} KB [files >5MB may take a while, please be patient])`,
+        jsonParseError: (msg) => `Malformed JSON (the file may be truncated or incomplete). Details: ${msg}`,
+        unknownFormatError: "Unable to recognize this file's SBOM format. This tool currently supports standard CycloneDX (JSON) or SPDX (JSON) only.",
+        noassertionRatio: (ratio) => `${ratio}% of all components`,
+        noNoassertionFound: "🎉 No NOASSERTION fields detected",
+
+        checkCreatorTitle: "Author / Creator",
+        creatorPassDesc: (creator) => `Creator detected: "${creator}"`,
+        creatorFailDesc: "No valid Creator declaration found in metadata or creationInfo. CRA requires every SBOM to state the producing organization or tool name.",
+
+        checkDocIdTitle: "Unique Document Identifier",
+        docIdPassDesc: (docId) => `Unique document identifier detected: "${docId}"`,
+        docIdFailDesc: `No unique document identifier found (CycloneDX should have "serialNumber", SPDX should have "documentNamespace"). Without this field, the document cannot be uniquely located across multiple delivered versions.`,
+
+        checkTimestampTitle: "Timestamp / ISO 8601",
+        timestampPassDesc: (ts) => `Timestamp detected: "${ts}", and it conforms to ISO 8601.`,
+        timestampMissingDesc: "No creation timestamp found in the SBOM file.",
+        timestampFormatBadDesc: (ts) => `Timestamp detected: "${ts}", but its format does not conform to the ISO 8601 format required by CRA (e.g. 2024-05-23T13:51:37Z).`,
+
+        checkDocVersionTitle: "Document Version",
+        docVersionInfoDesc: "The SPDX spec has no native \"document version\" field, so this cannot be verified automatically. Consider embedding a version marker in documentNamespace, or noting it in creationInfo.comment to meet the CRA requirement.",
+        docVersionPassDesc: (v) => `Document version detected: "${v}"`,
+        docVersionFailDesc: `No document version found for this SBOM (CycloneDX root-level "version" field).`,
+
+        checkNameVersionTitle: "Component Name / Version",
+        nameVersionPassDesc: "All components fully declare a component name and a specific version number.",
+        nameVersionWarnDesc: "Some components are missing a name or version (or marked NOASSERTION/NONE), which prevents precisely matching that component against specific CVEs.",
+
+        checkSupplierTitle: "Supplier / Publisher",
+        supplierPassDesc: "All components declare a supplier name, or are traceable via CPE/PURL identifiers that carry equivalent vendor information (Vendor Traceability).",
+        supplierWarnDesc: "Some components lack a clear publisher name (including those marked NOASSERTION), and their CPE/PURL identifiers don't carry equivalent information either — this prevents assigning a responsible party during regulatory review.",
+
+        checkIdentifiersTitle: "Component Unique Identifier (CPE / PURL)",
+        identifiersPassDesc: "All externally-sourced components carry a standard CPE identifier or PURL, meeting the compliance standard for automated vulnerability matching.",
+        identifiersWarnDesc: "Some components lack a Common Platform Enumeration (CPE) or Package URL (PURL), which prevents downstream security scanners from identifying known vulnerabilities (CVEs). Some gaps are acceptable since not every component realistically has a CPE/PURL, but a compliance rate below 50% indicates a severe gap that should be reviewed.",
+
+        checkHashTitle: "Cryptographic Hash (SHA-256)",
+        hashPassDesc: "All components and files provide a strong SHA-256 verification hash (or are reasonably exempt via a specific mechanism), meeting the tamper-evidence standard.",
+        hashWarnDesc: "Some components either provide no hash at all, or don't use a secure SHA-256 algorithm. Providing only SHA-512 is still non-compliant — SHA-256 must be present (SHA-1/SHA-256/SHA-512 together also satisfies this). Some gaps are acceptable since not every component realistically has a SHA-256 hash, but a compliance rate below 50% indicates a severe gap that should be reviewed.",
+
+        checkDependencyTitle: "Dependency Relationship Tree",
+        depMissingDesc: "No dependency relationship field (dependencies / relationships) found — the bill of materials cannot establish a dependency tree. At minimum, top-level dependencies should be covered.",
+        depFoundDesc: "Successfully retrieved the component dependency/relationship tree.",
+        depCoverageSuffix: (pct) => ` The dependency graph covers about ${pct}% of components (higher coverage means transitive dependencies are more fully disclosed).`,
+
+        checkUpdateCadenceTitle: "Update Cadence",
+        updateCadenceDesc: "CRA requires a new SBOM to be produced for every new build or release. This is a process control that cannot be automatically verified from a single SBOM snapshot — please cross-check version control/release records separately to confirm the SBOM cadence matches the software release cadence.",
+
+        errorLocationsLabel: "⚠️ Locations and source line numbers of the failures:",
+        failedRatioLabel: (failed, total, ratio) => `${failed} / ${total} missing | Compliance ${ratio}%`,
+        locationLabel: "📦 Location: ",
+        nearLine: (line) => `near line ${line}`,
+
+        pdfTitle: "CRA SBOM Compliance Audit Report",
+        pdfFileName: "File Name",
+        pdfFormat: "SBOM Format",
+        pdfTotalComponents: "Total Components",
+        pdfDocId: "Unique Document Identifier",
+        pdfDocVersion: "Document Version",
+        pdfGeneratedAt: "Report Generated At",
+        pdfResultsHeading: (count) => `Check Results (${count} items)`,
+        pdfFailSummary: (failed, total, ratio) => `${failed} / ${total} missing (Compliance ${ratio}%) — Locations and source line numbers of the failures:`,
+        pdfColIndex: "#",
+        pdfColName: "Component Name",
+        pdfColVersion: "Version",
+        pdfColLine: "Line",
+        pdfTruncationNote: (shown, remaining) => `Only the first ${shown} entries are shown; the remaining ${remaining} can be viewed in full on the web page.`,
+        pdfNoDataAlert: "Please upload and successfully parse an SBOM file before exporting a report.",
+        localeCode: 'en-US'
+      }
+    };
+
+    // 取得目前語言的翻譯值；若為函式則以傳入參數呼叫，否則直接回傳字串
+    function t(key, ...args) {
+      const entry = I18N[currentLang][key];
+      return typeof entry === 'function' ? entry(...args) : entry;
+    }
+
+    // 純靜態（無插值）UI 文字的雙語對照表，key 為元素 id
+    const STATIC_I18N = {
+      'ui-privacy-note': { zh: '100% 本地端瀏覽器解析，請安心使用。', en: '100% local, in-browser parsing — your file never leaves this device.' },
+      'ui-scan-cmd-label': { zh: '推薦掃描指令：', en: 'Recommended scan command: ' },
+      'ui-upload-label': { zh: '選擇 SBOM JSON 檔案至此', en: 'Click or drop your SBOM JSON file here' },
+      'ui-upload-hint': { zh: '支援 CycloneDX (JSON) / SPDX (JSON)', en: 'Supports CycloneDX (JSON) / SPDX (JSON)' },
+      'ui-error-label': { zh: '解析錯誤：', en: 'Parse Error:' },
+      'ui-meta-header': { zh: '📊 基本屬性與格式', en: '📊 Basic Attributes & Format' },
+      'ui-meta-format-label': { zh: 'SBOM 標準格式', en: 'SBOM Standard Format' },
+      'ui-meta-count-label': { zh: '總掃描到的檔案數量', en: 'Total Scanned Components' },
+      'ui-meta-docid-label': { zh: '文件唯一識別碼 (serialNumber / documentNamespace)', en: 'Unique Document Identifier (serialNumber / documentNamespace)' },
+      'ui-meta-docver-label': { zh: '文件版本號 (Document Version)', en: 'Document Version' },
+      'ui-noassertion-header': { zh: '🔍 NOASSERTION 欄位檢測', en: '🔍 NOASSERTION Field Detector' },
+      'ui-noassertion-desc': {
+        zh: '<code>NOASSERTION</code> 代表元件資訊或授權條款處於未聲明狀態。若比例過高，將會降低 SBOM 的可信度與合規價值。建議若部份組件為組織自行開發，將 NOASSERTION 替換為組織名稱或開發者名稱。',
+        en: '<code>NOASSERTION</code> means the component information or license terms are unasserted (unknown). A high ratio lowers the SBOM\'s trustworthiness and compliance value. If some components were developed in-house, consider replacing NOASSERTION with your organization or developer name.'
+      },
+      'ui-noassertion-stat-label': { zh: '偵測到含有 NOASSERTION 的元件', en: 'Components containing NOASSERTION' },
+      'ui-checklist-header': { zh: '📝 CRA 最小合規屬性稽核', en: '📝 CRA Minimum Compliance Attribute Audit' },
+      'ui-pdf-btn-label': { zh: '📄 匯出 PDF 報告', en: '📄 Export PDF Report' },
+      'ui-legend-pass': { zh: 'PASS 100%', en: 'PASS 100%' },
+      'ui-legend-caution': { zh: 'CAUTION 部分缺失', en: 'CAUTION Partial gaps' },
+      'ui-legend-fail': { zh: 'FAIL 嚴重缺失', en: 'FAIL Severe gaps' },
+      'ui-legend-info': { zh: 'INFO 不適用/無法自動判定', en: 'INFO Not applicable / cannot auto-verify' },
+      'ui-threshold-note': { zh: '※ CPE/PURL、SHA-256 缺失率 &gt;50% 才列為 FAIL；其餘項目缺失率 &gt;20% 即列為 FAIL', en: '※ CPE/PURL and SHA-256 are marked FAIL only when the miss rate is &gt;50%; other items are marked FAIL when the miss rate is &gt;20%' }
+    };
+
+    // 套用目前語言：更新所有靜態文字，並在已有已解析檔案時重新產生動態稽核結果
+    function applyLanguage() {
+      document.documentElement.lang = currentLang === 'en' ? 'en' : 'zh-TW';
+      const toggleBtn = document.getElementById('lang-toggle-btn');
+      if (toggleBtn) toggleBtn.innerText = currentLang === 'en' ? '🌐 中文' : '🌐 English';
+
+      Object.keys(STATIC_I18N).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = STATIC_I18N[id][currentLang];
+      });
+
+      if (lastParsedData) {
+        analyzeSbom(lastParsedData);
+      }
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      applyLanguage();
+    }
 
     // 判斷欄位是否為「已聲明」的有效值。
     // SPDX 規範中 NOASSERTION（未評估/未知）與 NONE（明確無值）在字面上是非空字串，
@@ -217,7 +446,7 @@
       if (!file) return;
 
       currentFileName = file.name;
-      document.getElementById('file-info').innerText = `已載入檔案: ${file.name} (${(file.size/1024).toFixed(2)} KB [檔案 >5MB 會載入較久請耐心等待])`;
+      document.getElementById('file-info').innerText = t('fileInfoLoaded', file.name, (file.size/1024).toFixed(2));
       document.getElementById('file-info').classList.remove('hidden');
       document.getElementById('error-box').classList.add('hidden');
       document.getElementById('dashboard').classList.add('hidden');
@@ -228,9 +457,11 @@
         rawFileLines = textContent.split('\n'); // 分割行
         try {
           const parsed = JSON.parse(textContent);
+          lastParsedData = parsed;
           analyzeSbom(parsed);
         } catch (err) {
-          showError(`JSON 語法毀損（可能發生截斷或不完整）。錯誤詳細資訊: ${err.message}`);
+          lastParsedData = null;
+          showError(t('jsonParseError', err.message));
         }
       };
       reader.readAsText(file);
@@ -267,7 +498,7 @@
 
     // 尋找特定元件在原始 JSON 中大概位在第幾行（已過濾 Document 根節點）
     function findComponentLine(componentName, componentVersion) {
-      if (!componentName) return { lineNum: "未知", snippet: "{}" };
+      if (!componentName) return { lineNum: t('unknown'), snippet: "{}" };
       
       let foundIndex = -1;
       for (let i = 0; i < rawFileLines.length; i++) {
@@ -303,7 +534,7 @@
           snippet: snippet
         };
       }
-      return { lineNum: "未知", snippet: `"${componentName}"` };
+      return { lineNum: t('unknown'), snippet: `"${componentName}"` };
     }
 
     // 尋找根節點特定屬性（如 metadata / creationInfo）所在的行數
@@ -315,13 +546,13 @@
         const snippet = rawFileLines.slice(start, end + 1).map(l => l.trim()).join('\n');
         return { lineNum: foundIndex + 1, snippet: snippet };
       }
-      return { lineNum: "全域檔頭", snippet: `"${keyword}" 欄位遺失` };
+      return { lineNum: t('globalHeader'), snippet: t('fieldMissing', keyword) };
     }
 
     function analyzeSbom(data) {
       document.getElementById('dashboard').classList.remove('hidden');
       
-      let format = "未知格式";
+      let format = t('unknownFormat');
       let isFormatValid = false; // 用於標記格式是否合法
       let creator = null;
       let timestamp = null;
@@ -338,7 +569,7 @@
       
       // A. 判定是否為 CycloneDX 格式
       if (data.bomFormat && data.bomFormat.toLowerCase() === "cyclonedx") {
-        format = `CycloneDX v${data.specVersion || "未知"}`;
+        format = `CycloneDX v${data.specVersion || t('unknown')}`;
         isFormatValid = true;
         rawComponents = data.components || [];
         hasDependencies = !!(data.dependencies && data.dependencies.length > 0);
@@ -412,19 +643,19 @@
       // ==========================================
       const formatEl = document.getElementById('meta-format');
       if (!isFormatValid) {
-        formatEl.innerHTML = `<span class="text-rose-500 font-extrabold">❌ FAIL (未知格式)</span>`;
+        formatEl.innerHTML = `<span class="text-rose-500 font-extrabold">${t('formatFailBadge')}</span>`;
         document.getElementById('meta-count').innerText = "-";
         document.getElementById('meta-docid').innerText = "-";
         document.getElementById('meta-docversion').innerText = "-";
 
         document.getElementById('noassertion-list').innerHTML = "";
         document.getElementById('noassertion-count').innerText = "0";
-        document.getElementById('noassertion-ratio').innerText = "佔全體元件 0%";
+        document.getElementById('noassertion-ratio').innerText = t('noassertionRatio', 0);
         document.getElementById('ntia-checklist').innerHTML = "";
         reportMeta = null;
         auditRecords = [];
 
-        showError("無法辨識該檔案的 SBOM 格式。此工具目前僅支援標準的 CycloneDX (JSON) 或 SPDX (JSON) 格式。");
+        showError(t('unknownFormatError'));
         return;
       } else {
         formatEl.innerHTML = `<span class="font-bold text-teal-300">${format}</span>`;
@@ -458,17 +689,17 @@
       }
 
       document.getElementById('meta-count').innerText = totalFilesCount;
-      document.getElementById('meta-docid').innerText = isAssertedValue(docId) ? docId : "(未偵測到)";
+      document.getElementById('meta-docid').innerText = isAssertedValue(docId) ? docId : t('notDetected');
       document.getElementById('meta-docversion').innerText = docVersionApplicable
-        ? (isAssertedValue(docVersion) ? docVersion : "(未偵測到)")
-        : "SPDX 規範無此欄位";
+        ? (isAssertedValue(docVersion) ? docVersion : t('notDetected'))
+        : t('spdxNoDocVersionField');
 
       reportMeta = {
         fileName: currentFileName,
         format: format,
         totalCount: totalFilesCount,
         docId: isAssertedValue(docId) ? docId : null,
-        docVersion: docVersionApplicable ? (isAssertedValue(docVersion) ? docVersion : null) : "N/A（SPDX 規範無此欄位）"
+        docVersion: docVersionApplicable ? (isAssertedValue(docVersion) ? docVersion : null) : t('spdxNoDocVersionField')
       };
 
       // 2. NOASSERTION 欄位檢測
@@ -492,8 +723,8 @@
           noassertionCount++;
           const loc = findComponentLine(c.name, c.version || c.versionInfo);
           matchedComponents.push({
-            name: c.name || "未定義元件",
-            version: c.version || c.versionInfo || "未知",
+            name: c.name || t('undefinedComponent'),
+            version: c.version || c.versionInfo || t('unknown'),
             line: loc.lineNum
           });
         }
@@ -501,7 +732,7 @@
 
       document.getElementById('noassertion-count').innerText = noassertionCount;
       const ratio = components.length > 0 ? Math.round((noassertionCount / components.length) * 100) : 0;
-      document.getElementById('noassertion-ratio').innerText = `佔全體元件 ${ratio}%`;
+      document.getElementById('noassertion-ratio').innerText = t('noassertionRatio', ratio);
 
       if (matchedComponents.length > 0) {
         matchedComponents.forEach(item => {
@@ -511,7 +742,7 @@
           listEl.appendChild(p);
         });
       } else {
-        listEl.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-2">🎉 未偵測到 NOASSERTION 欄位</p>`;
+        listEl.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-2">${t('noNoassertionFound')}</p>`;
       }
     }
 
@@ -540,13 +771,13 @@
       let creatorFailedItems = [];
       if (!hasCreator) {
         const loc = findMetadataLine(isCdx ? "metadata" : "creationInfo");
-        creatorFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+        creatorFailedItems.push({ name: t('globalHeader'), version: t('global'), line: loc.lineNum, snippet: loc.snippet });
       }
       renderCheckItem(
         checklistEl,
-        "建立者資訊 (Author / Creator)",
+        t('checkCreatorTitle'),
         hasCreator ? 'pass' : 'fail',
-        hasCreator ? `已偵測到建立者："${creator}"` : "未在 metadata 或 creationInfo 內找到有效的建立者 (Creator) 宣告，CRA 要求每份 SBOM 必須標示產出組織或工具名稱。",
+        hasCreator ? t('creatorPassDesc', creator) : t('creatorFailDesc'),
         creatorFailedItems, 1
       );
 
@@ -557,15 +788,13 @@
       let docIdFailedItems = [];
       if (!hasDocId) {
         const loc = findMetadataLine(isCdx ? "serialNumber" : "documentNamespace");
-        docIdFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+        docIdFailedItems.push({ name: t('globalHeader'), version: t('global'), line: loc.lineNum, snippet: loc.snippet });
       }
       renderCheckItem(
         checklistEl,
-        "檔案識別碼 (Unique Document Identifier)",
+        t('checkDocIdTitle'),
         hasDocId ? 'pass' : 'fail',
-        hasDocId
-          ? `已偵測到文件唯一識別碼："${docId}"`
-          : `未找到此 SBOM 文件的唯一識別編號（CycloneDX 應具備 "serialNumber"，SPDX 應具備 "documentNamespace"）。缺少此欄位將無法在多次交付版本間唯一定位此份文件。`,
+        hasDocId ? t('docIdPassDesc', docId) : t('docIdFailDesc'),
         docIdFailedItems, 1
       );
 
@@ -576,19 +805,19 @@
       const timestampFormatValid = hasTimestamp && ISO8601_RE.test(timestamp.trim());
       let timestampFailedItems = [];
       let timestampTier = 'pass';
-      let timestampDesc = `已偵測到產生時間："${timestamp}"，且符合 ISO 8601 格式。`;
+      let timestampDesc = t('timestampPassDesc', timestamp);
       if (!hasTimestamp) {
         timestampTier = 'fail';
         const loc = findMetadataLine(isCdx ? "timestamp" : "created");
-        timestampDesc = "未找到 SBOM 檔案的建立時間戳記 (Timestamp)。";
-        timestampFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+        timestampDesc = t('timestampMissingDesc');
+        timestampFailedItems.push({ name: t('globalHeader'), version: t('global'), line: loc.lineNum, snippet: loc.snippet });
       } else if (!timestampFormatValid) {
         timestampTier = 'caution';
         const loc = findMetadataLine(isCdx ? "timestamp" : "created");
-        timestampDesc = `偵測到時間戳記："${timestamp}"，但格式不符合 CRA 要求的 ISO 8601（如 2024-05-23T13:51:37Z）。`;
-        timestampFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+        timestampDesc = t('timestampFormatBadDesc', timestamp);
+        timestampFailedItems.push({ name: t('globalHeader'), version: t('global'), line: loc.lineNum, snippet: loc.snippet });
       }
-      renderCheckItem(checklistEl, "時間戳記 (Timestamp / ISO 8601)", timestampTier, timestampDesc, timestampFailedItems, 1);
+      renderCheckItem(checklistEl, t('checkTimestampTitle'), timestampTier, timestampDesc, timestampFailedItems, 1);
 
       // ==========================================
       // 4. 檢測：文件版本號 (Document Version)
@@ -596,9 +825,9 @@
       if (!docVersionApplicable) {
         renderCheckItem(
           checklistEl,
-          "文件版本號 (Document Version)",
+          t('checkDocVersionTitle'),
           'info',
-          "SPDX 規範未定義原生的「文件版本」欄位，無法自動判定。建議透過 documentNamespace 中嵌入版次資訊，或於 creationInfo.comment 中補充版本說明以符合 CRA 要求。",
+          t('docVersionInfoDesc'),
           [], 1
         );
       } else {
@@ -606,13 +835,13 @@
         let docVerFailedItems = [];
         if (!hasDocVersion) {
           const loc = findMetadataLine("version");
-          docVerFailedItems.push({ name: "SBOM 檔案檔頭", version: "全域", line: loc.lineNum, snippet: loc.snippet });
+          docVerFailedItems.push({ name: t('globalHeader'), version: t('global'), line: loc.lineNum, snippet: loc.snippet });
         }
         renderCheckItem(
           checklistEl,
-          "文件版本號 (Document Version)",
+          t('checkDocVersionTitle'),
           hasDocVersion ? 'pass' : 'fail',
-          hasDocVersion ? `已偵測到文件版本號："${docVersion}"` : `未找到此份 SBOM 清單的文件版本號（CycloneDX 根層級 "version" 欄位）。`,
+          hasDocVersion ? t('docVersionPassDesc', docVersion) : t('docVersionFailDesc'),
           docVerFailedItems, 1
         );
       }
@@ -623,18 +852,18 @@
       const checkSpecs = [
         {
           id: "name-version",
-          name: "組件名稱與版本 (Component Name / Version)",
+          name: t('checkNameVersionTitle'),
           validator: (c) => {
             const name = c.name;
             const version = c.version || c.versionInfo;
             return isAssertedValue(name) && isAssertedValue(version);
           },
-          passDesc: "所有元件皆完整標示組件名稱與具體版本號。",
-          warnDesc: "部分元件缺少名稱或版本號（或標示為 NOASSERTION/NONE），將導致無法精確比對該組件是否受特定 CVE 影響。"
+          passDesc: t('nameVersionPassDesc'),
+          warnDesc: t('nameVersionWarnDesc')
         },
         {
           id: "supplier",
-          name: "供應商 / 發行者名稱 (Supplier / Publisher)",
+          name: t('checkSupplierTitle'),
           validator: (c) => {
             if (isAssertedValue(c.publisher) || isAssertedValue(c.originator) || isAssertedValue(c.group) || isAssertedValue(c.vendor)) return true;
             if (c.supplier) {
@@ -659,13 +888,13 @@
             }
             return false;
           },
-          passDesc: "所有元件皆已標示供應商名稱，或因 CPE/PURL 識別碼包含對應資訊而能有效溯源 (Vendor Traceability)。",
-          warnDesc: "部分元件缺乏明確的發行商名稱（含標示為 NOASSERTION 者），且 CPE 或 PURL 等唯一識別碼不包含對應資訊，這將導致法規審查時無法定義責任主體。"
+          passDesc: t('supplierPassDesc'),
+          warnDesc: t('supplierWarnDesc')
         },
         {
           id: "identifiers",
           cautionThreshold: 0.5, // CPE/PURL 常見合理缺漏，缺失率 >50%（合規率 <50%）才列為 FAIL，否則列為 CAUTION
-          name: "元件唯一識別碼 (CPE / PURL)",
+          name: t('checkIdentifiersTitle'),
           validator: (c) => {
             if (c.cpe && typeof c.cpe === 'string' && c.cpe.startsWith('cpe:')) return true;
             if (c.cpes && Array.isArray(c.cpes) && c.cpes.some(val => typeof val === 'string' && val.startsWith('cpe:'))) return true;
@@ -692,13 +921,13 @@
             }
             return false;
           },
-          passDesc: "所有外部引入元件皆具備標準 CPE 識別碼或 PURL，符合自動化漏洞比對之合規標準。",
-          warnDesc: "部分元件缺少通用平台列舉 (CPE) 或套件網址 (PURL)，這將導致下游安全性掃描工具無法有效識別已知漏洞 (CVEs)。考慮到部份組件可能不適用 CPE / PURL，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。"
+          passDesc: t('identifiersPassDesc'),
+          warnDesc: t('identifiersWarnDesc')
         },
         {
           id: "hash",
           cautionThreshold: 0.5, // SHA-256 常見合理缺漏（如未分析檔案），缺失率 >50%（合規率 <50%）才列為 FAIL，否則列為 CAUTION
-          name: "密碼學雜湊值 (Cryptographic Hash / SHA-256)",
+          name: t('checkHashTitle'),
           validator: (c) => {
             if (c.checksums && Array.isArray(c.checksums) && c.checksums.length > 0) {
               const hasSHA256 = c.checksums.some(ch => {
@@ -726,8 +955,8 @@
 
             return false;
           },
-          passDesc: "所有元件及檔案皆完整提供強固的 SHA-256 檔案驗證雜湊值（或因特定機制合理豁免），符合防篡改標準。",
-          warnDesc: "偵測到部分元件「未提供雜湊值」或「未使用安全之 SHA-256 演算法」。如僅提供 SHA-512 仍屬不合規，系統必須包含 SHA-256，若同時包含 SHA-1、SHA-256、SHA-512，則符合安全性規範。考慮到部份組件可能不適用 SHA-256 雜湊值，因此一定的數量缺失可以接受，但合規率若低於 50% 則屬嚴重缺失，建議重新確認。"
+          passDesc: t('hashPassDesc'),
+          warnDesc: t('hashWarnDesc')
         }
       ];
 
@@ -735,10 +964,10 @@
         let failedItems = [];
         components.forEach(c => {
           if (!spec.validator(c)) {
-            const ver = c.version || c.versionInfo || "未知";
+            const ver = c.version || c.versionInfo || t('unknown');
             const loc = findComponentLine(c.name, ver);
             failedItems.push({
-              name: c.name || "未定義元件",
+              name: c.name || t('undefinedComponent'),
               version: ver,
               line: loc.lineNum,
               snippet: loc.snippet
@@ -756,24 +985,23 @@
       // ==========================================
       let depDesc;
       if (!hasDependencies) {
-        depDesc = "缺少依賴關係欄位 (dependencies / relationships)，物料清單無法建立樹狀依賴鏈結，至少應涵蓋頂層相依性 (Top-level dependencies)。";
+        depDesc = t('depMissingDesc');
       } else {
         const coverage = (depRefs && totalCompCount > 0)
           ? Math.round((Math.min(depRefs.size, totalCompCount) / totalCompCount) * 100)
           : null;
-        depDesc = "成功檢索到元件樹狀依賴關聯 (Dependency/Relationship Trees)。"
-          + (coverage !== null ? ` 依賴圖涵蓋約 ${coverage}% 的元件（涵蓋率越高代表遞迴相依性 Transitive dependencies 揭露得越完整）。` : "");
+        depDesc = t('depFoundDesc') + (coverage !== null ? t('depCoverageSuffix', coverage) : "");
       }
-      renderCheckItem(checklistEl, "依賴關係深度 (Dependency Relationship Tree)", hasDependencies ? 'pass' : 'fail', depDesc, [], 1);
+      renderCheckItem(checklistEl, t('checkDependencyTitle'), hasDependencies ? 'pass' : 'fail', depDesc, [], 1);
 
       // ==========================================
       // 7. 資訊卡：更新頻率 (Update Cadence) — 無法由單一檔案自動判定
       // ==========================================
       renderCheckItem(
         checklistEl,
-        "更新頻率 (Update Cadence)",
+        t('checkUpdateCadenceTitle'),
         'info',
-        "CRA 要求每次新的編譯 (Build) 或發布 (Release) 皆須產出對應的新版 SBOM。此屬性屬於流程管控，無法從單一 SBOM 快照自動驗證，請另行核對版本控制/發布紀錄，確認 SBOM 產出頻率與軟體發布頻率一致。",
+        t('updateCadenceDesc'),
         [], 1
       );
     }
@@ -815,17 +1043,17 @@
         errorListHtml = `
           <div class="mt-3 pt-3 border-t border-gray-800 space-y-2">
             <div class="flex items-center justify-between text-xs font-bold ${style.text}">
-              <span>⚠️ 發生錯誤的位置與原始碼行號：</span>
+              <span>${t('errorLocationsLabel')}</span>
               <span class="bg-black/30 border border-gray-800 ${style.text} px-2 py-0.5 rounded font-mono text-[11px]">
-                ${failedCount} / ${totalCount} 缺失 | 合規率 ${passRatio}%
+                ${t('failedRatioLabel', failedCount, totalCount, passRatio)}
               </span>
             </div>
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
               ${failedItems.map(item => `
                 <div class="bg-gray-900 p-2 rounded text-xs border border-gray-800">
                   <div class="flex justify-between text-[11px] font-semibold text-gray-400 mb-1">
-                    <span>📦 位置: ${item.name} (${item.version})</span>
-                    <span class="text-rose-400 font-mono">第 ${item.line} 行附近</span>
+                    <span>${t('locationLabel')}${item.name} (${item.version})</span>
+                    <span class="text-rose-400 font-mono">${t('nearLine', item.line)}</span>
                   </div>
                   <pre class="bg-black/40 text-gray-300 p-1.5 rounded font-mono text-[10px] overflow-x-auto whitespace-pre-wrap"><code>${escapeHtml(item.snippet)}</code></pre>
                 </div>
@@ -871,24 +1099,28 @@
     // 透過瀏覽器原生列印（另存為 PDF）輸出，避免額外引入 PDF 產生函式庫的相依性。
     function generatePdfReport() {
       if (!reportMeta || auditRecords.length === 0) {
-        alert('請先上傳並成功解析一份 SBOM 檔案，再匯出報告。');
+        alert(t('pdfNoDataAlert'));
         return;
       }
 
-      const generatedAt = new Date().toLocaleString('zh-TW', { hour12: false });
+      const generatedAt = new Date().toLocaleString(t('localeCode'), { hour12: false });
+      const notDetected = t('notDetected');
+
+      const printReportEl = document.getElementById('print-report');
+      printReportEl.setAttribute('lang', currentLang === 'en' ? 'en' : 'zh-TW');
 
       let html = `
-        <h1>CRA SBOM 合規稽核報告</h1>
+        <h1>${t('pdfTitle')}</h1>
         <div class="pr-subtitle">TÜV SÜD ENE Cyber Security Service</div>
         <table class="pr-meta">
-          <tr><td>檔案名稱</td><td>${escapeHtml(reportMeta.fileName || '-')}</td></tr>
-          <tr><td>SBOM 格式</td><td>${escapeHtml(reportMeta.format || '-')}</td></tr>
-          <tr><td>元件總數</td><td>${escapeHtml(reportMeta.totalCount)}</td></tr>
-          <tr><td>文件唯一識別碼</td><td>${escapeHtml(reportMeta.docId || '(未偵測到)')}</td></tr>
-          <tr><td>文件版本號</td><td>${escapeHtml(reportMeta.docVersion || '(未偵測到)')}</td></tr>
-          <tr><td>報告產生時間</td><td>${escapeHtml(generatedAt)}</td></tr>
+          <tr><td>${t('pdfFileName')}</td><td>${escapeHtml(reportMeta.fileName || '-')}</td></tr>
+          <tr><td>${t('pdfFormat')}</td><td>${escapeHtml(reportMeta.format || '-')}</td></tr>
+          <tr><td>${t('pdfTotalComponents')}</td><td>${escapeHtml(reportMeta.totalCount)}</td></tr>
+          <tr><td>${t('pdfDocId')}</td><td>${escapeHtml(reportMeta.docId || notDetected)}</td></tr>
+          <tr><td>${t('pdfDocVersion')}</td><td>${escapeHtml(reportMeta.docVersion || notDetected)}</td></tr>
+          <tr><td>${t('pdfGeneratedAt')}</td><td>${escapeHtml(generatedAt)}</td></tr>
         </table>
-        <h2>檢查項目結果（共 ${auditRecords.length} 項）</h2>
+        <h2>${t('pdfResultsHeading', auditRecords.length)}</h2>
       `;
 
       auditRecords.forEach((rec, idx) => {
@@ -900,21 +1132,21 @@
         if (rec.failedItems && rec.failedItems.length > 0) {
           const failedCount = rec.failedItems.length;
           const passRatio = rec.totalCount > 0 ? (((rec.totalCount - failedCount) / rec.totalCount) * 100).toFixed(1) : "0.0";
-          html += `<div class="pr-fail-summary">缺失 ${failedCount} / ${rec.totalCount}（合規率 ${passRatio}%）— 發生錯誤的位置與原始碼行號：</div>`;
-          html += `<table class="pr-fail-table"><thead><tr><th>#</th><th>組件名稱</th><th>版本</th><th>行號</th></tr></thead><tbody>`;
+          html += `<div class="pr-fail-summary">${t('pdfFailSummary', failedCount, rec.totalCount, passRatio)}</div>`;
+          html += `<table class="pr-fail-table"><thead><tr><th>${t('pdfColIndex')}</th><th>${t('pdfColName')}</th><th>${t('pdfColVersion')}</th><th>${t('pdfColLine')}</th></tr></thead><tbody>`;
           rec.failedItems.slice(0, PDF_MAX_ITEMS_PER_CHECK).forEach((item, i) => {
             html += `<tr><td>${i + 1}</td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.version)}</td><td>${escapeHtml(item.line)}</td></tr>`;
           });
           html += `</tbody></table>`;
           if (failedCount > PDF_MAX_ITEMS_PER_CHECK) {
-            html += `<p class="pr-note">僅列出前 ${PDF_MAX_ITEMS_PER_CHECK} 筆，其餘 ${failedCount - PDF_MAX_ITEMS_PER_CHECK} 筆請於網頁介面檢視完整清單。</p>`;
+            html += `<p class="pr-note">${t('pdfTruncationNote', PDF_MAX_ITEMS_PER_CHECK, failedCount - PDF_MAX_ITEMS_PER_CHECK)}</p>`;
           }
         }
 
         html += `</div>`;
       });
 
-      document.getElementById('print-report').innerHTML = html;
+      printReportEl.innerHTML = html;
       window.print();
     }
   </script>
