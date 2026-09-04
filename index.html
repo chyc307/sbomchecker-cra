@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sbomchecker-cra</title>
+    <style>
+        :root {
+            --primary-color: #0f4c81;
+            --primary-hover: #155a96;
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #6c757d;
+            --accent-bg: #f8f9fa;
+            --border-color: #e2e8f0;
+            --code-bg: #2d3748;
+            --code-text: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            border-top: 6px solid var(--primary-color);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notice-box {
+            background-color: #eeb00415;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #b45309;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .credentials-card {
+            background-color: var(--accent-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .credentials-card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .credential-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .value {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: #edf2f7;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #2d3748;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>sbomchecker-cra</h1>
+        
+        <div class="notice-box">
+            The original <strong>sbomchecker-cra</strong> is moving to another platform.
+        </div>
+
+        <div class="section">
+            <p>Please visit the following website:</p>
+            <a href="https://tuvsudcra-tw.com/#templates" class="btn" target="_blank" rel="noopener noreferrer">
+                Go to New Website &rarr;
+            </a>
+        </div>
+
+        <div class="credentials-card">
+            <h2>Access Credentials</h2>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+                Please access the SBOM checker tool with following credentials:
+            </p>
+            <div class="credential-row">
+                <span class="label">Username</span>
+                <span class="value">coop1</span>
+            </div>
+            <div class="credential-row">
+                <span class="label">Password</span>
+                <span class="value">test12345</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; SBOM Checker Service Migration
+        </div>
+    </div>
+
+</body>
+</html>
